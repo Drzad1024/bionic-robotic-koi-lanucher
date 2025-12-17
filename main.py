@@ -7,7 +7,7 @@ from __future__ import annotations
 import sys
 import time
 import re
-import os  # 新增：用于路径处理
+import os
 from dataclasses import dataclass
 from typing import Optional, Dict, List, Tuple
 
@@ -94,7 +94,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         self.setupUi(self)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
 
-        # [修改点 1] 设置程序图标
+        # 设置程序图标
         icon_path = "favicon.ico"
         if os.path.exists(icon_path):
             self.setWindowIcon(QtGui.QIcon(icon_path))
@@ -102,9 +102,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         # ---------- 串口 ----------
         self.ser: Optional[serial.Serial] = None
         self.current_port: Optional[str] = None
-        self.default_baud = 115200  # 正常通信波特率
+        self.default_baud = 115200
         self.current_baud = self.default_baud
         self._closing = False
+        self.ctrl_version = None  # 存储握手探测到的版本 "V1.1" 或 "V2.0"
 
         # ---------- 设备 ----------
         self.tx_channel = int(self.spin_CtrlCh.value())
@@ -140,9 +141,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         self._update_ui_state()
         self._status("准备就绪。请选择端口并点击“启动串口(W)”。", 5000)
 
-    # ... [中间省略未修改的辅助函数] ...
-    # (保持原有的 _init_log, _wire_ui, _init_shortcuts, _bind_value_pairs, _init_tables, _status, _log, _todo, _ensure_serial 等方法不变)
-
+    # ... [保持辅助函数不变] ...
     def _init_log(self):
         try:
             self.txt_Log.document().setMaximumBlockCount(1500)
@@ -299,8 +298,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
 
         self.combo_Port.setEnabled(not serial_open)
         self.btn_OpenSerial.setEnabled(True)
-        # comboBox (版本选择) 在串口连接后由逻辑决定是否禁用，这里不做统一覆盖，
-        # 在握手逻辑里单独控制。
+        # comboBox (版本选择) 在串口连接后由逻辑决定是否禁用
 
         for w in [self.btn_InitCtrl, self.btn_QueryCtrl, self.btn_SetCtrlCh, self.spin_CtrlCh]:
             w.setEnabled(serial_open)
@@ -344,13 +342,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
                 finally:
                     chk.blockSignals(False)
                 timer.stop()
-            # 断开时解锁版本选择框，允许用户看
             self.comboBox.setEnabled(True)
             self.lbl_CtrlLinkState.setText("未连接")
             self.lbl_CtrlLinkState.setStyleSheet("color: red; font-weight: bold;")
 
     # ======================================================================
-    # 串口开关 (含 [修改点 2] 握手探测逻辑)
+    # 串口开关 (含握手探测)
     # ======================================================================
     def toggle_serial(self):
         if serial is None:
@@ -368,6 +365,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
                 self.ser = None
                 self.current_port = None
                 self._rx_buffer = b""
+                self.ctrl_version = None
                 self.btn_OpenSerial.setText("启动串口(&W)")
                 self._status("串口已关闭。", 3000)
 
@@ -387,7 +385,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
             # 1. 打开串口，先设为 9600 用于握手
             self.ser = serial.Serial(
                 port=port,
-                baudrate=9600,  # 初始握手波特率
+                baudrate=9600,
                 bytesize=serial.EIGHTBITS,
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE,
@@ -398,82 +396,234 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
             self.ser.reset_output_buffer()
             self.current_port = port
 
-            # 更新UI状态，先显示连接中
             self.btn_OpenSerial.setText("关闭串口(&W)")
             self.lbl_CtrlLinkState.setText("连接中...")
             self.lbl_CtrlLinkState.setStyleSheet("color: orange; font-weight: bold;")
-            self._update_ui_state()  # 解锁大部分按钮，但稍后根据握手结果决定
+            self._update_ui_state()
 
-            # 2. 执行握手探测
+            # 2. 握手探测
             detected_version = None
 
-            # 辅助函数：尝试发送并等待回包
             def try_handshake(rts_val: bool) -> bool:
                 self.ser.rts = rts_val
-                # 稍作延时等待 RTS 电平稳定（部分 USB 转串口芯片需要）
                 self._sleep_ms(50)
-                # 清空缓冲区防止残留
                 self.ser.reset_input_buffer()
-                # 发送查询指令 C1 00 07
                 cmd = bytes([0xC1, 0x00, 0x07])
                 self.ser.write(cmd)
                 self.ser.flush()
                 self._log(f"[HANDSHAKE] TX (RTS={rts_val}): C1 00 07")
 
-                # 等待回包 (约 200ms 超时)
                 t0 = time.perf_counter()
                 while (time.perf_counter() - t0) < 0.2:
                     if self.ser.in_waiting > 0:
-                        # 只要有数据就认为有回复
-                        # 也可以更严格判断是否以 C1 开头
                         raw = self.ser.read(self.ser.in_waiting)
                         self._log(f"[HANDSHAKE] RX: {raw.hex().upper()}")
                         return True
                     self._sleep_ms(10)
                 return False
 
-            # 步骤 2.1: 尝试 V2.0 (RTS=True)
             if try_handshake(True):
-                detected_version = "V2.0"
-                # V2.0 保持 RTS=True
+                detected_version = "V1.1"
             else:
-                # 步骤 2.2: 尝试 V1.1 (RTS=False)
                 if try_handshake(False):
-                    detected_version = "V1.1"
-                    # V1.1 保持 RTS=False
+                    detected_version = "V2.0"
 
-            # 3. 根据结果设置 UI
+            # 3. 设置结果
             if detected_version:
+                self.ctrl_version = detected_version
                 self._status(f"控制器握手成功：{detected_version}", 4000)
                 self.lbl_CtrlLinkState.setText("已连接")
                 self.lbl_CtrlLinkState.setStyleSheet("color: green; font-weight: bold;")
 
-                # 设置下拉栏并禁止更改
                 idx = self.comboBox.findText(detected_version)
                 if idx >= 0:
                     self.comboBox.setCurrentIndex(idx)
                 self.comboBox.setEnabled(False)
 
-                # 握手完成，切换回高速波特率
+                # 切回工作波特率，并设置正常工作时的RTS (V1.1=True, V2.0=False)
                 self.ser.baudrate = 115200
                 self.current_baud = 115200
-                self._log(f"[SER] 切换波特率至 115200 (Mode: {detected_version})")
+                self.ser.rts = (detected_version == "V1.1")
+                self._log(f"[SER] 切换波特率至 115200, RTS={self.ser.rts}")
 
-                # 启动读轮询
                 self.read_timer.start(self.READ_POLL_MS)
 
             else:
                 self._status("控制器连接错误：无响应", 5000)
                 self.lbl_CtrlLinkState.setText("连接错误")
                 self.lbl_CtrlLinkState.setStyleSheet("color: red; font-weight: bold;")
-                # 虽然握手失败，但串口仍保持打开状态，允许用户手动尝试或其他操作
-                # 切换回默认波特率
+                # 握手失败也切回波特率，防止卡死
                 self.ser.baudrate = 115200
                 self.read_timer.start(self.READ_POLL_MS)
 
         except Exception as e:
             self.ser = None
             QMessageBox.critical(self, "打开失败", f"{port} 打开失败：\n{e}")
+
+    # ======================================================================
+    # 控制器初始化与查询（实现部分）
+    # ======================================================================
+    def _enter_config_mode(self):
+        """进入配置模式：9600波特率，根据版本设置RTS"""
+        if not self._ensure_serial(): return False
+
+        self.ser.baudrate = 9600
+        # 配置模式下：V2.0 RTS=True, V1.1 RTS=False
+        is_v2 = (self.comboBox.currentText() == "V2.0")
+        self.ser.rts = True if is_v2 else False
+
+        self._sleep_ms(50)
+        self.ser.reset_input_buffer()
+        self._log(f"[CFG_ENTER] 9600, RTS={self.ser.rts}")
+        return True
+
+    def _exit_config_mode(self):
+        """退出配置模式：115200波特率，RTS反转"""
+        if self.ser and self.ser.is_open:
+            self.ser.baudrate = 115200
+            # 正常模式下：V2.0 RTS=False, V1.1 RTS=True
+            is_v2 = (self.comboBox.currentText() == "V2.0")
+            self.ser.rts = False if is_v2 else True
+            self._log(f"[CFG_EXIT] 115200, RTS={self.ser.rts}")
+            self._sleep_ms(20)
+
+    def _send_config_cmd_and_wait(self, cmd_hex: str, expected_hex: str = None, timeout_s: float = 0.3) -> Optional[
+        bytes]:
+        """在配置模式下发送指令并等待回包"""
+        cmd_bytes = bytes.fromhex(cmd_hex)
+        self.ser.write(cmd_bytes)
+        self.ser.flush()
+
+        rx_accum = b""
+        t0 = time.perf_counter()
+        while (time.perf_counter() - t0) < timeout_s:
+            if self.ser.in_waiting > 0:
+                rx_accum += self.ser.read(self.ser.in_waiting)
+                # 如果指定了期望回包，且匹配到了，提前返回
+                if expected_hex and bytes.fromhex(expected_hex) in rx_accum:
+                    return rx_accum
+            self._sleep_ms(5)
+
+        return rx_accum if rx_accum else None
+
+    # 1. 初始化控制器
+    def _init_controller(self):
+        if not self._ensure_serial(): return
+
+        try:
+            self.read_timer.stop()  # 暂停轮询，防止干扰
+            self._enter_config_mode()
+
+            # 发送初始化指令
+            cmd = "C0 00 07 00 01 00 E7 00 17 43"
+            expect = "C1 00 07 00 01 00 E7 00 17 43"
+
+            rx = self._send_config_cmd_and_wait(cmd, expect, 0.4)
+
+            success = False
+            if rx and bytes.fromhex(expect) in rx:
+                success = True
+                self._status("初始化控制器成功！", 3000)
+                QMessageBox.information(self, "成功", "控制器初始化成功。")
+            else:
+                self._status("初始化失败：超时或无正确回复。", 4000)
+                QMessageBox.warning(self, "失败", "初始化失败，未收到正确回复。")
+
+        except Exception as e:
+            self._log(f"[INIT_ERR] {e}")
+        finally:
+            self._exit_config_mode()
+            self.read_timer.start(self.READ_POLL_MS)
+
+    # 2. 查询控制器参数
+    def _query_ctrl_params(self):
+        if not self._ensure_serial(): return
+
+        try:
+            self.read_timer.stop()
+            self._enter_config_mode()
+
+            cmd = "C1 00 07"
+            rx = self._send_config_cmd_and_wait(cmd, None, 0.4)
+
+            if rx and len(rx) >= 10:
+                # 寻找帧头 C1
+                start = rx.find(0xC1)
+                if start >= 0 and len(rx[start:]) >= 10:
+                    payload = rx[start + 3: start + 10]
+
+                    # 解析
+                    mod_addr = f"0x{payload[0]:02X}{payload[1]:02X}"
+                    net_id = payload[2]
+
+                    p3 = payload[3]
+                    baud_idx = (p3 >> 5) & 0x07
+                    parity_idx = (p3 >> 3) & 0x03
+                    air_idx = p3 & 0x07
+
+                    p4 = payload[4]
+                    pkt_len_idx = (p4 >> 6) & 0x03
+                    rssi_en = (p4 >> 5) & 0x01
+                    tx_pwr_idx = p4 & 0x03
+
+                    ch = payload[5] & 0x7F
+                    trans_mode = (payload[6] >> 6) & 0x01
+
+                    # 更新UI
+                    self.tx_channel = ch
+                    self.spin_CtrlCh.setValue(ch)
+
+                    # 弹窗显示
+                    msg = (
+                        f"模块地址: {mod_addr}\n"
+                        f"网络ID: {net_id}\n"
+                        f"串口波特率: {self._baud_rate_to_str(baud_idx)}\n"
+                        f"校验位: {self._parity_to_str(parity_idx)}\n"
+                        f"空中速率: {self._air_speed_to_str(air_idx)}\n"
+                        f"分包长度: {self._packet_length_to_str(pkt_len_idx)}\n"
+                        f"RSSI上报: {'启用' if rssi_en else '禁用'}\n"
+                        f"信道号: {ch}\n"
+                        f"发射功率: {self._tx_power_to_str(tx_pwr_idx)}\n"
+                        f"传输方式: {'定点传输' if trans_mode else '透明传输'}"
+                    )
+                    QMessageBox.information(self, "查询结果", msg)
+                else:
+                    QMessageBox.warning(self, "查询结果", f"回复数据长度不足或格式错误: {rx.hex().upper()}")
+            else:
+                QMessageBox.warning(self, "查询结果", "查询超时，无回复。")
+
+        except Exception as e:
+            self._log(f"[QUERY_ERR] {e}")
+        finally:
+            self._exit_config_mode()
+            self.read_timer.start(self.READ_POLL_MS)
+
+    def _set_ctrl_channel(self):
+        if not self._ensure_serial(): return
+        ch = int(self.spin_CtrlCh.value())
+        # 预留：此处应下发配置指令，与_init_controller类似，只是指令内容不同
+        self._todo(f"设置信道到 {ch} (需实现对应指令)")
+
+    # 辅助转换函数
+    def _baud_rate_to_str(self, idx):
+        m = {0: "1200", 1: "2400", 2: "4800", 3: "9600", 4: "19200", 5: "38400", 6: "57600", 7: "115200"}
+        return m.get(idx, f"Unknown({idx})")
+
+    def _parity_to_str(self, idx):
+        m = {0: "8N1", 1: "8O1", 2: "8E1", 3: "8N1"}
+        return m.get(idx, f"Unknown({idx})")
+
+    def _air_speed_to_str(self, idx):
+        m = {0: "0.3k", 1: "1.2k", 2: "2.4k", 3: "4.8k", 4: "9.6k", 5: "19.2k", 6: "38.4k", 7: "62.5k"}
+        return m.get(idx, f"Unknown({idx})")
+
+    def _packet_length_to_str(self, idx):
+        m = {0: "240B", 1: "128B", 2: "64B", 3: "32B"}
+        return m.get(idx, f"Unknown({idx})")
+
+    def _tx_power_to_str(self, idx):
+        m = {0: "22dBm", 1: "17dBm", 2: "13dBm", 3: "10dBm"}
+        return m.get(idx, f"Unknown({idx})")
 
     # ======================================================================
     # 串口收包与解析 (保持不变)
@@ -749,26 +899,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
             if it:
                 it.setCheckState(Qt.CheckState.Unchecked)
         self._update_ui_state()
-
-    def _init_controller(self):
-        if not self._ensure_serial():
-            return
-        self._todo("初始化控制器")
-
-    def _query_ctrl_params(self):
-        if not self._ensure_serial():
-            return
-        self._todo("查询控制器参数")
-
-    def _set_ctrl_channel(self):
-        if not self._ensure_serial():
-            return
-        ch = int(self.spin_CtrlCh.value())
-        if not (0 <= ch <= 83):
-            self._status("信道号无效，应在 0-83 之间。", 4000)
-            return
-        self.tx_channel = ch
-        self._todo(f"设置信道到 {ch}")
 
     def _search_devices(self):
         if not self._ensure_serial():
