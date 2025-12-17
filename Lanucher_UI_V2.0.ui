@@ -1,0 +1,2557 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>960</width>
+    <height>785</height>
+   </rect>
+  </property>
+  <property name="font">
+   <font>
+    <family>Microsoft YaHei</family>
+    <pointsize>10</pointsize>
+   </font>
+  </property>
+  <property name="windowTitle">
+   <string>仿生机器锦鲤控制台 V2.5</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="horizontalLayout_Main">
+    <property name="spacing">
+     <number>8</number>
+    </property>
+    <property name="leftMargin">
+     <number>8</number>
+    </property>
+    <property name="topMargin">
+     <number>8</number>
+    </property>
+    <property name="rightMargin">
+     <number>8</number>
+    </property>
+    <property name="bottomMargin">
+     <number>8</number>
+    </property>
+    <item>
+     <widget class="QFrame" name="frame_Sidebar">
+      <property name="minimumSize">
+       <size>
+        <width>260</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>260</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_Side">
+       <item>
+        <widget class="QGroupBox" name="grp_Serial">
+         <property name="title">
+          <string>通讯配置</string>
+         </property>
+         <layout class="QFormLayout" name="formLayout_Serial">
+          <item row="0" column="0">
+           <widget class="QLabel" name="lbl_Port">
+            <property name="text">
+             <string>端口号：</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QComboBox" name="combo_Port">
+            <item>
+             <property name="text">
+              <string>点击刷新</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="1" column="0" colspan="2">
+           <widget class="QPushButton" name="btn_OpenSerial">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>30</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>启动串口(&amp;W)</string>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="grp_Controller">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="title">
+          <string>控制器参数</string>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <layout class="QFormLayout" name="formLayout">
+            <item row="0" column="0">
+             <widget class="QLabel" name="lbl_CtrlLink">
+              <property name="text">
+               <string>连接状态：</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QLabel" name="lbl_CtrlLinkState">
+              <property name="font">
+               <font>
+                <family>Microsoft YaHei UI</family>
+                <pointsize>10</pointsize>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">color: red;
+font-weight: bold;</string>
+              </property>
+              <property name="text">
+               <string>未连接</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="lbl_CtrlVer">
+              <property name="text">
+               <string>连接版本：</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QComboBox" name="comboBox">
+              <item>
+               <property name="text">
+                <string>V2.0</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>V1.1</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="lbl_CtrlID">
+              <property name="text">
+               <string>控制器ID：</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QLabel" name="lbl_CtrlID_Val">
+              <property name="text">
+               <string>0x0001</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="lbl_CtrlCh">
+              <property name="text">
+               <string>信道号(0-83)：</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QSpinBox" name="spin_CtrlCh">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>55</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="maximum">
+               <number>83</number>
+              </property>
+              <property name="value">
+               <number>23</number>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="0" colspan="2">
+             <widget class="QPushButton" name="btn_SetCtrlCh">
+              <property name="text">
+               <string>设置信道</string>
+              </property>
+             </widget>
+            </item>
+            <item row="5" column="0">
+             <widget class="QPushButton" name="btn_InitCtrl">
+              <property name="minimumSize">
+               <size>
+                <width>106</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>初始化控制器</string>
+              </property>
+             </widget>
+            </item>
+            <item row="5" column="1">
+             <widget class="QPushButton" name="btn_QueryCtrl">
+              <property name="text">
+               <string>查询参数</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="grp_Devices">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="title">
+          <string>设备列表</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_DevBtns">
+            <property name="spacing">
+             <number>2</number>
+            </property>
+            <item>
+             <widget class="QPushButton" name="btn_Search">
+              <property name="text">
+               <string>搜索设备(&amp;R)</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btn_AddDevManual">
+              <property name="text">
+               <string>手动添加</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QTableWidget" name="table_Devices">
+            <property name="styleSheet">
+             <string notr="true">QHeaderView::section { background-color: #f0f0f0;
+border: none; border-right: 1px solid #d0d0d0; height: 25px; }</string>
+            </property>
+            <property name="horizontalScrollBarPolicy">
+             <enum>Qt::ScrollBarAlwaysOff</enum>
+            </property>
+            <property name="editTriggers">
+             <set>QAbstractItemView::NoEditTriggers</set>
+            </property>
+            <property name="selectionMode">
+             <enum>QAbstractItemView::SingleSelection</enum>
+            </property>
+            <property name="selectionBehavior">
+             <enum>QAbstractItemView::SelectRows</enum>
+            </property>
+            <property name="showGrid">
+             <bool>true</bool>
+            </property>
+            <property name="columnCount">
+             <number>2</number>
+            </property>
+            <attribute name="horizontalHeaderVisible">
+             <bool>true</bool>
+            </attribute>
+            <attribute name="horizontalHeaderDefaultSectionSize">
+             <number>80</number>
+            </attribute>
+            <attribute name="horizontalHeaderStretchLastSection">
+             <bool>true</bool>
+            </attribute>
+            <attribute name="verticalHeaderVisible">
+             <bool>false</bool>
+            </attribute>
+            <row>
+             <property name="text">
+              <string>1</string>
+             </property>
+            </row>
+            <column>
+             <property name="text">
+              <string>FishID</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>配对状态</string>
+             </property>
+            </column>
+            <item row="0" column="0">
+             <property name="text">
+              <string>0x7892</string>
+             </property>
+            </item>
+            <item row="0" column="1">
+             <property name="text">
+              <string>未配对</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item>
+           <layout class="QFormLayout" name="formLayout_2">
+            <item row="0" column="0">
+             <widget class="QPushButton" name="btn_SelectAll">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>106</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>全选</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QPushButton" name="btn_SelectNone">
+              <property name="text">
+               <string>全不选</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QPushButton" name="btn_SelectNone_2">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>106</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>配对</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QPushButton" name="btn_SelectNone_3">
+              <property name="text">
+               <string>取消配对</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_Side">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <layout class="QVBoxLayout" name="verticalLayout_Main">
+      <property name="spacing">
+       <number>10</number>
+      </property>
+      <item>
+       <widget class="QGroupBox" name="grp_Monitor">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>220</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>280</height>
+         </size>
+        </property>
+        <property name="title">
+         <string>系统监视</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_2">
+           <item>
+            <widget class="QPushButton" name="btn_GlobalStop_2">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>35</height>
+              </size>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">font-weight: bold;
+font-size: 12pt;</string>
+             </property>
+             <property name="text">
+              <string>急停</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="btn_GlobalStop">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>35</height>
+              </size>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">background-color: rgb(220, 50, 50); color: white; font-weight: bold; border-radius: 4px;
+font-size: 12pt;</string>
+             </property>
+             <property name="text">
+              <string>全部急停(&amp;S)</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QTableWidget" name="table_SysMonitor">
+           <property name="editTriggers">
+            <set>QAbstractItemView::NoEditTriggers</set>
+           </property>
+           <property name="alternatingRowColors">
+            <bool>true</bool>
+           </property>
+           <property name="selectionBehavior">
+            <enum>QAbstractItemView::SelectRows</enum>
+           </property>
+           <property name="rowCount">
+            <number>1</number>
+           </property>
+           <property name="columnCount">
+            <number>7</number>
+           </property>
+           <attribute name="horizontalHeaderVisible">
+            <bool>true</bool>
+           </attribute>
+           <attribute name="horizontalHeaderDefaultSectionSize">
+            <number>90</number>
+           </attribute>
+           <attribute name="horizontalHeaderHighlightSections">
+            <bool>true</bool>
+           </attribute>
+           <attribute name="horizontalHeaderStretchLastSection">
+            <bool>true</bool>
+           </attribute>
+           <attribute name="verticalHeaderVisible">
+            <bool>false</bool>
+           </attribute>
+           <attribute name="verticalHeaderDefaultSectionSize">
+            <number>30</number>
+           </attribute>
+           <row>
+            <property name="text">
+             <string>1</string>
+            </property>
+           </row>
+           <column>
+            <property name="text">
+             <string>选择</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>FishID</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>电压(V)</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>功率(mW)</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>电量</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>消息回复</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>运行状态</string>
+            </property>
+           </column>
+           <item row="0" column="0">
+            <property name="text">
+             <string/>
+            </property>
+           </item>
+           <item row="0" column="1">
+            <property name="text">
+             <string>0x0001</string>
+            </property>
+           </item>
+           <item row="0" column="2">
+            <property name="text">
+             <string>8.35</string>
+            </property>
+           </item>
+           <item row="0" column="3">
+            <property name="text">
+             <string>1500</string>
+            </property>
+           </item>
+           <item row="0" column="4">
+            <property name="text">
+             <string>80%</string>
+            </property>
+           </item>
+           <item row="0" column="5">
+            <property name="text">
+             <string>否</string>
+            </property>
+           </item>
+           <item row="0" column="6">
+            <property name="text">
+             <string>等待</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="lbl_MonitorHint">
+           <property name="styleSheet">
+            <string notr="true">color: gray;</string>
+           </property>
+           <property name="text">
+            <string>提示：点击选中后才可发送指令，支持多选</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QTabWidget" name="tabWidget_Main">
+        <property name="currentIndex">
+         <number>0</number>
+        </property>
+        <widget class="QWidget" name="tab_SimpleMotion">
+         <attribute name="title">
+          <string>简易运动控制</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_Gear">
+          <item>
+           <widget class="QGroupBox" name="grp_Gear_Ctrl">
+            <property name="title">
+             <string>速度/转向控制</string>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_Dial">
+             <item>
+              <layout class="QVBoxLayout" name="verticalLayout_SpeedDial">
+               <item>
+                <widget class="QDial" name="dial_Speed">
+                 <property name="styleSheet">
+                  <string notr="true">QDial { background-color: qradialgradient(spread:pad, cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, stop:0 #444, stop:1 #222);
+color: white; }</string>
+                 </property>
+                 <property name="minimum">
+                  <number>0</number>
+                 </property>
+                 <property name="maximum">
+                  <number>15</number>
+                 </property>
+                 <property name="notchesVisible">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="lbl_SpeedDial">
+                 <property name="text">
+                  <string>速度档 (0-15)</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QSpinBox" name="spin_GearSpeed">
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                 <property name="maximum">
+                  <number>15</number>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QVBoxLayout" name="verticalLayout_TurnDial">
+               <item>
+                <widget class="QDial" name="dial_Turn">
+                 <property name="styleSheet">
+                  <string notr="true">QDial { background-color: qradialgradient(spread:pad, cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, stop:0 #444, stop:1 #222);
+color: white; }</string>
+                 </property>
+                 <property name="minimum">
+                  <number>1</number>
+                 </property>
+                 <property name="maximum">
+                  <number>15</number>
+                 </property>
+                 <property name="value">
+                  <number>8</number>
+                 </property>
+                 <property name="notchesVisible">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="lbl_TurnDial">
+                 <property name="text">
+                  <string>转向档 (1-7左 | 8直 | 9-15右)</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QSpinBox" name="spin_GearTurn">
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                 <property name="minimum">
+                  <number>1</number>
+                 </property>
+                 <property name="maximum">
+                  <number>15</number>
+                 </property>
+                 <property name="value">
+                  <number>8</number>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QFrame" name="frame_Gear_Act">
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_Gear_Act">
+             <item>
+              <widget class="QCheckBox" name="chk_Sync_Gear">
+               <property name="text">
+                <string>实时同步指令</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="spin_Sync_Gear_Ms">
+               <property name="suffix">
+                <string> ms</string>
+               </property>
+               <property name="minimum">
+                <number>20</number>
+               </property>
+               <property name="maximum">
+                <number>1000</number>
+               </property>
+               <property name="value">
+                <number>40</number>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_Gear">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btn_SendGear">
+               <property name="minimumSize">
+                <size>
+                 <width>120</width>
+                 <height>35</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>单次发送指令</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <spacer name="verticalSpacer_Gear">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tab_Servo">
+         <attribute name="title">
+          <string>舵机综合管理</string>
+         </attribute>
+         <layout class="QHBoxLayout" name="horizontalLayout_Servo_Main">
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_Servo_Ctrl">
+            <item>
+             <widget class="QGroupBox" name="grp_Servo_Pos">
+              <property name="title">
+               <string>位置控制</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_SPos">
+               <item>
+                <layout class="QHBoxLayout" name="layout_ServoMode">
+                 <item>
+                  <widget class="QRadioButton" name="radio_S1_Only">
+                   <property name="text">
+                    <string>仅控 S1</string>
+                   </property>
+                   <property name="checked">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QRadioButton" name="radio_S2_Only">
+                   <property name="text">
+                    <string>仅控 S2</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QRadioButton" name="radio_Dual_Sync">
+                   <property name="text">
+                    <string>双机同步</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <widget class="QFrame" name="frame_S1">
+                 <layout class="QHBoxLayout" name="horizontalLayout_S1">
+                  <item>
+                   <widget class="QLabel" name="lbl_S1">
+                    <property name="minimumSize">
+                     <size>
+                      <width>30</width>
+                      <height>0</height>
+                     </size>
+                    </property>
+                    <property name="text">
+                     <string>S1</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QSlider" name="slider_S1">
+                    <property name="minimum">
+                     <number>-900</number>
+                    </property>
+                    <property name="maximum">
+                     <number>900</number>
+                    </property>
+                    <property name="orientation">
+                     <enum>Qt::Horizontal</enum>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QDoubleSpinBox" name="spin_S1">
+                    <property name="minimum">
+                     <double>-90.000000000000000</double>
+                    </property>
+                    <property name="maximum">
+                     <double>90.000000000000000</double>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="QFrame" name="frame_S2">
+                 <layout class="QHBoxLayout" name="horizontalLayout_S2">
+                  <item>
+                   <widget class="QLabel" name="lbl_S2">
+                    <property name="minimumSize">
+                     <size>
+                      <width>30</width>
+                      <height>0</height>
+                     </size>
+                    </property>
+                    <property name="text">
+                     <string>S2</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QSlider" name="slider_S2">
+                    <property name="minimum">
+                     <number>-900</number>
+                    </property>
+                    <property name="maximum">
+                     <number>900</number>
+                    </property>
+                    <property name="orientation">
+                     <enum>Qt::Horizontal</enum>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QDoubleSpinBox" name="spin_S2">
+                    <property name="minimum">
+                     <double>-90.000000000000000</double>
+                    </property>
+                    <property name="maximum">
+                     <double>90.000000000000000</double>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="QFrame" name="frame_Servo_Act">
+                 <layout class="QHBoxLayout" name="horizontalLayout_Servo_Act">
+                  <item>
+                   <widget class="QCheckBox" name="chk_Sync_Servo">
+                    <property name="text">
+                     <string>实时同步指令</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QSpinBox" name="spin_Sync_Servo_Ms">
+                    <property name="suffix">
+                     <string> ms</string>
+                    </property>
+                    <property name="minimum">
+                     <number>20</number>
+                    </property>
+                    <property name="maximum">
+                     <number>1000</number>
+                    </property>
+                    <property name="value">
+                     <number>40</number>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <spacer name="horizontalSpacer_Servo">
+                    <property name="orientation">
+                     <enum>Qt::Horizontal</enum>
+                    </property>
+                    <property name="sizeHint" stdset="0">
+                     <size>
+                      <width>40</width>
+                      <height>20</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="btn_SendServo">
+                    <property name="text">
+                     <string>发送位置</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="grp_Servo_Power">
+              <property name="title">
+               <string>电源输出</string>
+              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_SPower">
+               <item>
+                <widget class="QCheckBox" name="chk_S1_Pwr">
+                 <property name="text">
+                  <string>S1 供电</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="chk_S2_Pwr">
+                 <property name="text">
+                  <string>S2 供电</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btn_SetServoPower">
+                 <property name="text">
+                  <string>应用</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacer_ServoLeft">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="grp_Servo_Status">
+            <property name="minimumSize">
+             <size>
+              <width>280</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="title">
+             <string>舵机运行监视</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_ServoStat">
+             <item>
+              <widget class="QPushButton" name="btn_QueryServoAll">
+               <property name="text">
+                <string>查询全部状态</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="lbl_S1_Curr">
+               <property name="text">
+                <string>S1舵机输出电流：</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QProgressBar" name="bar_S1_Curr">
+               <property name="styleSheet">
+                <string notr="true">QProgressBar::chunk { background-color: #4caf50;
+}</string>
+               </property>
+               <property name="maximum">
+                <number>4000</number>
+               </property>
+               <property name="value">
+                <number>1500</number>
+               </property>
+               <property name="format">
+                <string>%v mA</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="lbl_S2_Curr">
+               <property name="text">
+                <string>S2舵机输出电流：</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QProgressBar" name="bar_S2_Curr">
+               <property name="styleSheet">
+                <string notr="true">QProgressBar::chunk { background-color: #4caf50;
+}</string>
+               </property>
+               <property name="maximum">
+                <number>4000</number>
+               </property>
+               <property name="value">
+                <number>2500</number>
+               </property>
+               <property name="format">
+                <string>%v mA</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="Line" name="line_6">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="lbl_S1_Temp">
+               <property name="text">
+                <string>S1舵机电源MOS温度：</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QProgressBar" name="bar_S1_Temp">
+               <property name="styleSheet">
+                <string notr="true">QProgressBar::chunk { background-color: #ff9800;
+}</string>
+               </property>
+               <property name="value">
+                <number>50</number>
+               </property>
+               <property name="format">
+                <string>%p℃</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="lbl_S2_Temp">
+               <property name="text">
+                <string>S2舵机电源MOS温度：</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QProgressBar" name="bar_S2_Temp">
+               <property name="styleSheet">
+                <string notr="true">QProgressBar::chunk { background-color: #ff9800; }</string>
+               </property>
+               <property name="value">
+                <number>60</number>
+               </property>
+               <property name="format">
+                <string>%p℃</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="verticalSpacer_ServoRight">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tab_AdvMotion">
+         <attribute name="title">
+          <string>高阶运动控制</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_CPG">
+          <item>
+           <widget class="QGroupBox" name="grp_CPG_Param">
+            <property name="title">
+             <string>CPG 参数配置</string>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_CPG">
+             <item row="0" column="0">
+              <widget class="QLabel" name="lbl_Amp">
+               <property name="text">
+                <string>摆幅 (Amp):</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QSlider" name="slider_Amp">
+               <property name="maximum">
+                <number>250</number>
+               </property>
+               <property name="value">
+                <number>150</number>
+               </property>
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QDoubleSpinBox" name="spin_Amp">
+               <property name="suffix">
+                <string> °</string>
+               </property>
+               <property name="decimals">
+                <number>1</number>
+               </property>
+               <property name="maximum">
+                <double>25.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.100000000000000</double>
+               </property>
+               <property name="value">
+                <double>15.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="lbl_Freq">
+               <property name="text">
+                <string>频率 (Freq):</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QSlider" name="slider_Freq">
+               <property name="maximum">
+                <number>38</number>
+               </property>
+               <property name="value">
+                <number>12</number>
+               </property>
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="2">
+              <widget class="QDoubleSpinBox" name="spin_Freq">
+               <property name="suffix">
+                <string> Hz</string>
+               </property>
+               <property name="decimals">
+                <number>1</number>
+               </property>
+               <property name="maximum">
+                <double>3.800000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.100000000000000</double>
+               </property>
+               <property name="value">
+                <double>1.200000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="lbl_Bias">
+               <property name="text">
+                <string>偏置 (Bias):</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="QSlider" name="slider_Bias">
+               <property name="minimum">
+                <number>-250</number>
+               </property>
+               <property name="maximum">
+                <number>250</number>
+               </property>
+               <property name="value">
+                <number>-150</number>
+               </property>
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="2">
+              <widget class="QDoubleSpinBox" name="spin_Bias">
+               <property name="suffix">
+                <string> °</string>
+               </property>
+               <property name="decimals">
+                <number>1</number>
+               </property>
+               <property name="minimum">
+                <double>-25.000000000000000</double>
+               </property>
+               <property name="maximum">
+                <double>25.000000000000000</double>
+               </property>
+               <property name="value">
+                <double>-15.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="grp_CPG_Inter">
+            <property name="title">
+             <string>间歇参数</string>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+            <property name="checked">
+             <bool>false</bool>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_CPG_Inter">
+             <item>
+              <widget class="QLabel" name="lbl_N">
+               <property name="text">
+                <string>摆动 N 次：</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="spin_N">
+               <property name="maximum">
+                <number>15</number>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="lbl_Coast">
+               <property name="text">
+                <string>滑行时间(s)：</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="spin_Coast">
+               <property name="decimals">
+                <number>1</number>
+               </property>
+               <property name="maximum">
+                <double>400.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.100000000000000</double>
+               </property>
+               <property name="value">
+                <double>3.500000000000000</double>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QFrame" name="frame_CPG_Action">
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_CPG_Act">
+             <item>
+              <widget class="QCheckBox" name="chk_Sync_CPG">
+               <property name="text">
+                <string>实时同步指令</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="spin_Sync_CPG_Ms">
+               <property name="suffix">
+                <string> ms</string>
+               </property>
+               <property name="minimum">
+                <number>20</number>
+               </property>
+               <property name="maximum">
+                <number>1000</number>
+               </property>
+               <property name="value">
+                <number>40</number>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_CPG">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btn_SendCPG">
+               <property name="minimumSize">
+                <size>
+                 <width>120</width>
+                 <height>35</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>单次发送指令</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <spacer name="verticalSpacer_CPG">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tab_Play">
+         <attribute name="title">
+          <string>表演模式</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_Play">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_Play">
+            <item>
+             <widget class="QLabel" name="lbl_PlayId">
+              <property name="text">
+               <string>序号 (1-255)：</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="spin_PlayId">
+              <property name="minimum">
+               <number>1</number>
+              </property>
+              <property name="maximum">
+               <number>255</number>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btn_PlayStart">
+              <property name="text">
+               <string>开始表演</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_Play">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QTableWidget" name="table_PlayDesc">
+            <property name="alternatingRowColors">
+             <bool>true</bool>
+            </property>
+            <property name="selectionBehavior">
+             <enum>QAbstractItemView::SelectRows</enum>
+            </property>
+            <property name="columnCount">
+             <number>2</number>
+            </property>
+            <attribute name="horizontalHeaderStretchLastSection">
+             <bool>true</bool>
+            </attribute>
+            <attribute name="verticalHeaderVisible">
+             <bool>false</bool>
+            </attribute>
+            <row>
+             <property name="text">
+              <string>1</string>
+             </property>
+            </row>
+            <row>
+             <property name="text">
+              <string>2</string>
+             </property>
+            </row>
+            <column>
+             <property name="text">
+              <string>序号</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>动作描述</string>
+             </property>
+            </column>
+            <item row="0" column="0">
+             <property name="text">
+              <string>1</string>
+             </property>
+             <property name="textAlignment">
+              <set>AlignCenter</set>
+             </property>
+            </item>
+            <item row="0" column="1">
+             <property name="text">
+              <string>快速冲刺动作</string>
+             </property>
+            </item>
+            <item row="1" column="0">
+             <property name="text">
+              <string>2</string>
+             </property>
+             <property name="textAlignment">
+              <set>AlignCenter</set>
+             </property>
+            </item>
+            <item row="1" column="1">
+             <property name="text">
+              <string>8字回旋游动</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tab_BootConfig">
+         <attribute name="title">
+          <string>开机参数设置</string>
+         </attribute>
+         <layout class="QHBoxLayout" name="horizontalLayout_Boot">
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_BootLeft">
+            <item>
+             <widget class="QGroupBox" name="grp_Device_ID">
+              <property name="title">
+               <string>基础身份</string>
+              </property>
+              <layout class="QFormLayout" name="formLayout_ID">
+               <item row="0" column="0">
+                <widget class="QLabel" name="label_BID">
+                 <property name="text">
+                  <string>设备 ID (FishID)：</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1">
+                <layout class="QHBoxLayout" name="layout_BID_Warn">
+                 <item>
+                  <widget class="QSpinBox" name="spin_F_ID">
+                   <property name="toolTip">
+                    <string>⚠ 慎重修改，修改后需重新连接</string>
+                   </property>
+                   <property name="maximum">
+                    <number>65535</number>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="label_Warn">
+                   <property name="font">
+                    <font>
+                     <family>Microsoft YaHei UI</family>
+                     <pointsize>10</pointsize>
+                     <bold>true</bold>
+                    </font>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true">color: orange;
+font-weight: bold;</string>
+                   </property>
+                   <property name="text">
+                    <string>⚠ 谨慎修改</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="label_BPwd">
+                 <property name="text">
+                  <string>控制密码：</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QSpinBox" name="spin_F_Pwd">
+                 <property name="maximum">
+                  <number>65535</number>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0">
+                <widget class="QLabel" name="label_BCh">
+                 <property name="text">
+                  <string>LoRa 信道：</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="1">
+                <widget class="QSpinBox" name="spin_F_Ch">
+                 <property name="maximum">
+                  <number>83</number>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="grp_Startup_Basic">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="title">
+               <string>启动行为</string>
+              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_3">
+               <item>
+                <layout class="QGridLayout" name="gridLayout">
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="label_BMode">
+                   <property name="text">
+                    <string>默认运行模式：</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1" colspan="2">
+                  <widget class="QComboBox" name="combo_F_Mode">
+                   <item>
+                    <property name="text">
+                     <string>0: 保持复位 (静止)</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>1: CPG 游动</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>2: 间歇游动 (CPG+间歇)</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>4: 表演模式</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>5: 档位模式</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>6: 档位+间歇</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>7: 保护模式 (无力矩)</string>
+                    </property>
+                   </item>
+                  </widget>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="label_BLed">
+                   <property name="text">
+                    <string>默认LED效果：</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1" colspan="2">
+                  <widget class="QComboBox" name="combo_F_Led">
+                   <item>
+                    <property name="text">
+                     <string>常灭</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>常亮</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>慢闪</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>快闪</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>默认(心跳双闪)</string>
+                    </property>
+                   </item>
+                  </widget>
+                 </item>
+                 <item row="2" column="0">
+                  <widget class="QLabel" name="label_BReply">
+                   <property name="text">
+                    <string>消息回复：</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="1">
+                  <widget class="QCheckBox" name="chk_F_Reply">
+                   <property name="font">
+                    <font>
+                     <family>Microsoft YaHei UI</family>
+                     <pointsize>10</pointsize>
+                     <bold>false</bold>
+                    </font>
+                   </property>
+                   <property name="toolTip">
+                    <string>默认开启回复方便调试，关闭后需发特定指令才可唤醒</string>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true"/>
+                   </property>
+                   <property name="text">
+                    <string>开机启动消息回复</string>
+                   </property>
+                   <property name="checked">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="2">
+                  <widget class="QLabel" name="label_Warn_2">
+                   <property name="font">
+                    <font>
+                     <family>Microsoft YaHei UI</family>
+                     <pointsize>10</pointsize>
+                     <bold>true</bold>
+                    </font>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true">color: orange;
+font-weight: bold;</string>
+                   </property>
+                   <property name="text">
+                    <string>⚠ 谨慎修改</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacer_BootLeft">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_BootRight">
+            <item>
+             <widget class="QGroupBox" name="grp_Startup_Motion">
+              <property name="title">
+               <string>默认运动参数</string>
+              </property>
+              <layout class="QGridLayout" name="gridLayout_BMotion">
+               <item row="0" column="0">
+                <widget class="QLabel" name="label_BAmp">
+                 <property name="text">
+                  <string>CPG 摆幅：</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1">
+                <widget class="QDoubleSpinBox" name="spin_F_Amp">
+                 <property name="suffix">
+                  <string> °</string>
+                 </property>
+                 <property name="decimals">
+                  <number>1</number>
+                 </property>
+                 <property name="maximum">
+                  <double>25.000000000000000</double>
+                 </property>
+                 <property name="singleStep">
+                  <double>0.100000000000000</double>
+                 </property>
+                 <property name="value">
+                  <double>15.000000000000000</double>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="label_BFreq">
+                 <property name="text">
+                  <string>CPG 频率：</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QDoubleSpinBox" name="spin_F_Freq">
+                 <property name="suffix">
+                  <string> Hz</string>
+                 </property>
+                 <property name="decimals">
+                  <number>1</number>
+                 </property>
+                 <property name="maximum">
+                  <double>3.800000000000000</double>
+                 </property>
+                 <property name="singleStep">
+                  <double>0.100000000000000</double>
+                 </property>
+                 <property name="value">
+                  <double>1.500000000000000</double>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0">
+                <widget class="QLabel" name="label_BBias">
+                 <property name="text">
+                  <string>CPG 偏置 (°)：</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="1">
+                <widget class="QDoubleSpinBox" name="spin_F_Bias">
+                 <property name="suffix">
+                  <string> °</string>
+                 </property>
+                 <property name="decimals">
+                  <number>1</number>
+                 </property>
+                 <property name="minimum">
+                  <double>-25.000000000000000</double>
+                 </property>
+                 <property name="maximum">
+                  <double>25.000000000000000</double>
+                 </property>
+                 <property name="singleStep">
+                  <double>0.100000000000000</double>
+                 </property>
+                 <property name="value">
+                  <double>-8.000000000000000</double>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="0">
+                <widget class="QLabel" name="label_BN">
+                 <property name="text">
+                  <string>间歇次数 (N)：</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="1">
+                <widget class="QSpinBox" name="spin_F_N">
+                 <property name="maximum">
+                  <number>15</number>
+                 </property>
+                 <property name="value">
+                  <number>5</number>
+                 </property>
+                </widget>
+               </item>
+               <item row="4" column="0">
+                <widget class="QLabel" name="label_BCoast">
+                 <property name="text">
+                  <string>滑行时间 (s)：</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="5" column="0">
+                <widget class="QLabel" name="label_BPlay">
+                 <property name="text">
+                  <string>表演序号 (1-255)：</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="5" column="1">
+                <widget class="QSpinBox" name="spin_F_PlayIdx">
+                 <property name="minimum">
+                  <number>0</number>
+                 </property>
+                 <property name="maximum">
+                  <number>255</number>
+                 </property>
+                </widget>
+               </item>
+               <item row="4" column="1">
+                <widget class="QDoubleSpinBox" name="spin_F_Coast">
+                 <property name="decimals">
+                  <number>1</number>
+                 </property>
+                 <property name="maximum">
+                  <double>400.000000000000000</double>
+                 </property>
+                 <property name="singleStep">
+                  <double>0.100000000000000</double>
+                 </property>
+                 <property name="value">
+                  <double>2.500000000000000</double>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="layout_BootActions">
+              <item>
+               <widget class="QPushButton" name="btn_FlashRead">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>35</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>读取当前设备配置</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btn_FlashSave">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>35</height>
+                 </size>
+                </property>
+                <property name="font">
+                 <font>
+                  <family>Microsoft YaHei UI</family>
+                  <pointsize>10</pointsize>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">background-color: #ff9800;
+font-weight: bold; color: white; border-radius: 4px;</string>
+                </property>
+                <property name="text">
+                 <string>保存配置到设备</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <spacer name="verticalSpacer_BootRight">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tab_Config">
+         <attribute name="title">
+          <string>高级设置</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_Cfg">
+          <item row="0" column="0">
+           <widget class="QGroupBox" name="grp_AutoReport">
+            <property name="title">
+             <string>状态自动回传配置</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_AutoReport">
+             <item>
+              <widget class="QLabel" name="lbl_ReportItems">
+               <property name="text">
+                <string>回传状态选项：</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <layout class="QGridLayout" name="gridLayout_ReportFlags">
+               <item row="0" column="0">
+                <widget class="QCheckBox" name="chk_Rpt_Motion">
+                 <property name="text">
+                  <string>运行状态</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1">
+                <widget class="QCheckBox" name="chk_Rpt_Power">
+                 <property name="text">
+                  <string>电压/功率</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QCheckBox" name="chk_Rpt_Servo">
+                 <property name="text">
+                  <string>舵机输出状态/电流</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QCheckBox" name="chk_Rpt_Temp">
+                 <property name="text">
+                  <string>舵机电源MOS温度</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0">
+                <widget class="QCheckBox" name="chk_Rpt_Time">
+                 <property name="text">
+                  <string>运行时间/剩余电量</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <widget class="Line" name="line_5">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="layout_ReportTime">
+               <item>
+                <widget class="QLabel" name="lbl_Ms">
+                 <property name="text">
+                  <string>回报间隔(ms)：</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QSpinBox" name="spin_Rpt_Ms">
+                 <property name="minimum">
+                  <number>100</number>
+                 </property>
+                 <property name="maximum">
+                  <number>3600000</number>
+                 </property>
+                 <property name="singleStep">
+                  <number>100</number>
+                 </property>
+                 <property name="value">
+                  <number>1000</number>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="layout_ReportAction">
+               <item>
+                <widget class="QRadioButton" name="radio_Rpt_Off">
+                 <property name="text">
+                  <string>关闭自动回报</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="radio_Rpt_On">
+                 <property name="text">
+                  <string>开启自动回报</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btn_SetAutoReport">
+                 <property name="text">
+                  <string>应用设置</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <spacer name="verticalSpacer">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QGroupBox" name="grp_Diag">
+            <property name="title">
+             <string>维护命令</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_3">
+             <item>
+              <layout class="QFormLayout" name="formLayout_3">
+               <item row="0" column="0">
+                <widget class="QPushButton" name="btn_SetInstallBias">
+                 <property name="minimumSize">
+                  <size>
+                   <width>147</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>设置安装偏置</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1">
+                <widget class="QPushButton" name="btn_ResetFault_6">
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>关闭消息回复</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QPushButton" name="btn_ResetFault">
+                 <property name="minimumSize">
+                  <size>
+                   <width>147</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>查询电压/功率</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QPushButton" name="btn_ResetFault_4">
+                 <property name="text">
+                  <string>查询舵机状态</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0">
+                <widget class="QPushButton" name="btn_ResetFault_3">
+                 <property name="minimumSize">
+                  <size>
+                   <width>147</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>查询MOS温度</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="1">
+                <widget class="QPushButton" name="btn_ResetFault_5">
+                 <property name="text">
+                  <string>查询Flash</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="0">
+                <widget class="QPushButton" name="btn_ResetFault_2">
+                 <property name="minimumSize">
+                  <size>
+                   <width>147</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>复位损坏舵机</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="1">
+                <widget class="QPushButton" name="btn_FactoryReset">
+                 <property name="font">
+                  <font>
+                   <family>Microsoft YaHei UI</family>
+                   <pointsize>10</pointsize>
+                   <bold>true</bold>
+                  </font>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">background-color: red;color: white;
+font-weight: bold;</string>
+                 </property>
+                 <property name="text">
+                  <string>恢复出厂设置</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <spacer name="verticalSpacer_ConfigRight">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>17</width>
+                 <height>130</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tab_Env">
+         <attribute name="title">
+          <string>系统环境检查</string>
+         </attribute>
+         <layout class="QHBoxLayout" name="horizontalLayout_Env">
+          <item>
+           <widget class="QGroupBox" name="grp_SysEnv">
+            <property name="title">
+             <string>系统环境</string>
+            </property>
+            <layout class="QFormLayout" name="formLayout_Sys">
+             <item row="0" column="0">
+              <widget class="QLabel" name="lbl_OS">
+               <property name="text">
+                <string>操作系统：</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLabel" name="lbl_OS_Val">
+               <property name="text">
+                <string>检测中...</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="lbl_CPU">
+               <property name="text">
+                <string>CPU型号：</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QLabel" name="lbl_CPU_Val">
+               <property name="text">
+                <string>检测中...</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="lbl_GPU_Basic">
+               <property name="text">
+                <string>显卡型号：</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="QLabel" name="lbl_GPU_Basic_Val">
+               <property name="text">
+                <string>检测中...</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0">
+              <widget class="QLabel" name="lbl_RAM">
+               <property name="text">
+                <string>内存容量：</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1">
+              <widget class="QLabel" name="lbl_RAM_Val">
+               <property name="text">
+                <string>检测中...</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="grp_CompEnv">
+            <property name="title">
+             <string>算力环境</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_Comp">
+             <item>
+              <layout class="QFormLayout" name="formLayout_Comp">
+               <item row="0" column="0">
+                <widget class="QLabel" name="lbl_GPU_Count">
+                 <property name="text">
+                  <string>GPU数量：</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1">
+                <widget class="QLabel" name="lbl_GPU_Count_Val">
+                 <property name="text">
+                  <string>--</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="lbl_CUDA">
+                 <property name="text">
+                  <string>CUDA版本：</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QLabel" name="lbl_CUDA_Val">
+                 <property name="text">
+                  <string>--</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0">
+                <widget class="QLabel" name="lbl_Vision">
+                 <property name="text">
+                  <string>全局视觉支持：</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="1">
+                <widget class="QLabel" name="lbl_Vision_Val">
+                 <property name="text">
+                  <string>--</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <spacer name="verticalSpacer_Comp">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btn_CheckCompute">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>40</height>
+                </size>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">background-color: #0078d7;
+color: white; font-weight: bold;</string>
+               </property>
+               <property name="text">
+                <string>检查算力环境</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="grp_Log">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>180</height>
+         </size>
+        </property>
+        <property name="title">
+         <string>通讯日志</string>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_Log">
+         <property name="leftMargin">
+          <number>4</number>
+         </property>
+         <property name="topMargin">
+          <number>4</number>
+         </property>
+         <property name="rightMargin">
+          <number>4</number>
+         </property>
+         <property name="bottomMargin">
+          <number>4</number>
+         </property>
+         <item>
+          <widget class="QPlainTextEdit" name="txt_Log">
+           <property name="font">
+            <font>
+             <family>Consolas</family>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+           <property name="plainText">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout_LogCtrl">
+           <item>
+            <widget class="QCheckBox" name="chk_AutoScroll">
+             <property name="text">
+              <string>滚动至最下方</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="btn_ClearLog">
+             <property name="text">
+              <string>清空</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="verticalSpacer_Log">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>960</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu_File">
+    <property name="title">
+     <string>文件(F)</string>
+    </property>
+    <addaction name="action_Load"/>
+    <addaction name="action_Save"/>
+    <addaction name="separator"/>
+    <addaction name="action_Exit"/>
+   </widget>
+   <widget class="QMenu" name="menu_Tools">
+    <property name="title">
+     <string>工具(T)</string>
+    </property>
+    <addaction name="action"/>
+   </widget>
+   <widget class="QMenu" name="menu_Help">
+    <property name="title">
+     <string>帮助(H)</string>
+    </property>
+    <addaction name="action_Protocol"/>
+    <addaction name="action_About"/>
+   </widget>
+   <addaction name="menu_File"/>
+   <addaction name="menu_Tools"/>
+   <addaction name="menu_Help"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="action_Load">
+   <property name="text">
+    <string>载入配置...</string>
+   </property>
+  </action>
+  <action name="action_Save">
+   <property name="text">
+    <string>保存配置...</string>
+   </property>
+  </action>
+  <action name="action_Exit">
+   <property name="text">
+    <string>退出</string>
+   </property>
+  </action>
+  <action name="action_OpenSerial">
+   <property name="text">
+    <string>连接串口</string>
+   </property>
+  </action>
+  <action name="action_SearchDev">
+   <property name="text">
+    <string>搜索设备</string>
+   </property>
+  </action>
+  <action name="action_Protocol">
+   <property name="text">
+    <string>通讯协议说明</string>
+   </property>
+  </action>
+  <action name="action_About">
+   <property name="text">
+    <string>关于</string>
+   </property>
+  </action>
+  <action name="action">
+   <property name="text">
+    <string>串口调试助手</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
