@@ -9,7 +9,7 @@ import time
 import re
 import os
 from dataclasses import dataclass
-from typing import Optional, Dict, List, Tuple
+from typing import Optional, Dict, List, Tuple, Any
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt, QTimer
@@ -57,7 +57,8 @@ def _load_ui_class():
 _load_ui_class()
 
 # ----------------------------- 协议与串口依赖 -----------------------------
-from LoraProtocol import *
+# 引入新版协议类
+from LoraProtocol import LoraProtocol, Cmd, RunMode, LedMode
 
 try:
     import serial
@@ -105,12 +106,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         self.default_baud = 115200
         self.current_baud = self.default_baud
         self._closing = False
-        self.ctrl_version = None  # 存储握手探测到的版本 "V1.1" 或 "V2.0"
+        self.ctrl_version = None  # "V1.1" 或 "V2.0"
 
         # ---------- 设备 ----------
         self.tx_channel = int(self.spin_CtrlCh.value())
         self.default_password = 0x0000
-        self.devices: Dict[int, FishDevice] = {}
+        self.devices: Dict[int, LoraProtocol] = {}  # 使用 LoraProtocol 类
         self.dev_state: Dict[int, DeviceState] = {}
         self.last_reply_enable = True
 
@@ -141,7 +142,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         self._update_ui_state()
         self._status("准备就绪。请选择端口并点击“启动串口(W)”。", 5000)
 
-    # ... [保持辅助函数不变] ...
+    # ... [UI 初始化相关函数保持不变] ...
     def _init_log(self):
         try:
             self.txt_Log.document().setMaximumBlockCount(1500)
@@ -298,7 +299,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
 
         self.combo_Port.setEnabled(not serial_open)
         self.btn_OpenSerial.setEnabled(True)
-        # comboBox (版本选择) 在串口连接后由逻辑决定是否禁用
 
         for w in [self.btn_InitCtrl, self.btn_QueryCtrl, self.btn_SetCtrlCh, self.spin_CtrlCh]:
             w.setEnabled(serial_open)
@@ -402,6 +402,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
             self._update_ui_state()
 
             # 2. 握手探测
+            # 规则:
+            # V2.0: 9600下 RTS=True 为配置模式 (能回复 C1 指令)
+            # V1.1: 9600下 RTS=False 为配置模式 (能回复 C1 指令)
             detected_version = None
 
             def try_handshake(rts_val: bool) -> bool:
@@ -422,13 +425,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
                     self._sleep_ms(10)
                 return False
 
+            # 先尝试 V2.0 (RTS=True)
             if try_handshake(True):
-                detected_version = "V1.1"
+                detected_version = "V2.0"
             else:
+                # 再尝试 V1.1 (RTS=False)
                 if try_handshake(False):
-                    detected_version = "V2.0"
+                    detected_version = "V1.1"
 
-            # 3. 设置结果
+            # 3. 设置结果与正常模式
             if detected_version:
                 self.ctrl_version = detected_version
                 self._status(f"控制器握手成功：{detected_version}", 4000)
@@ -440,11 +445,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
                     self.comboBox.setCurrentIndex(idx)
                 self.comboBox.setEnabled(False)
 
-                # 切回工作波特率，并设置正常工作时的RTS (V1.1=True, V2.0=False)
+                # 切换至正常通信波特率 115200
                 self.ser.baudrate = 115200
                 self.current_baud = 115200
-                self.ser.rts = (detected_version == "V1.1")
-                self._log(f"[SER] 切换波特率至 115200, RTS={self.ser.rts}")
+
+                # 设置正常模式下的 RTS
+                # V2.0 正常模式: RTS=False
+                # V1.1 正常模式: RTS=True
+                normal_rts = (detected_version == "V1.1")
+                self.ser.rts = normal_rts
+                self._log(f"[SER] 切换波特率至 115200, 正常模式 RTS={normal_rts}")
 
                 self.read_timer.start(self.READ_POLL_MS)
 
@@ -461,15 +471,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
             QMessageBox.critical(self, "打开失败", f"{port} 打开失败：\n{e}")
 
     # ======================================================================
-    # 控制器初始化与查询（实现部分）
+    # 控制器初始化与查询
     # ======================================================================
     def _enter_config_mode(self):
         """进入配置模式：9600波特率，根据版本设置RTS"""
         if not self._ensure_serial(): return False
 
         self.ser.baudrate = 9600
-        # 配置模式下：V2.0 RTS=True, V1.1 RTS=False
         is_v2 = (self.comboBox.currentText() == "V2.0")
+
+        # 配置模式: V2.0 RTS=True, V1.1 RTS=False
         self.ser.rts = True if is_v2 else False
 
         self._sleep_ms(50)
@@ -478,11 +489,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         return True
 
     def _exit_config_mode(self):
-        """退出配置模式：115200波特率，RTS反转"""
+        """退出配置模式：115200波特率，设置正常RTS"""
         if self.ser and self.ser.is_open:
             self.ser.baudrate = 115200
-            # 正常模式下：V2.0 RTS=False, V1.1 RTS=True
             is_v2 = (self.comboBox.currentText() == "V2.0")
+
+            # 正常模式: V2.0 RTS=False, V1.1 RTS=True
             self.ser.rts = False if is_v2 else True
             self._log(f"[CFG_EXIT] 115200, RTS={self.ser.rts}")
             self._sleep_ms(20)
@@ -499,7 +511,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         while (time.perf_counter() - t0) < timeout_s:
             if self.ser.in_waiting > 0:
                 rx_accum += self.ser.read(self.ser.in_waiting)
-                # 如果指定了期望回包，且匹配到了，提前返回
                 if expected_hex and bytes.fromhex(expected_hex) in rx_accum:
                     return rx_accum
             self._sleep_ms(5)
@@ -511,18 +522,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         if not self._ensure_serial(): return
 
         try:
-            self.read_timer.stop()  # 暂停轮询，防止干扰
+            self.read_timer.stop()
             self._enter_config_mode()
 
-            # 发送初始化指令
             cmd = "C0 00 07 00 01 00 E7 00 17 43"
             expect = "C1 00 07 00 01 00 E7 00 17 43"
 
             rx = self._send_config_cmd_and_wait(cmd, expect, 0.4)
 
-            success = False
             if rx and bytes.fromhex(expect) in rx:
-                success = True
                 self._status("初始化控制器成功！", 3000)
                 QMessageBox.information(self, "成功", "控制器初始化成功。")
             else:
@@ -547,12 +555,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
             rx = self._send_config_cmd_and_wait(cmd, None, 0.4)
 
             if rx and len(rx) >= 10:
-                # 寻找帧头 C1
                 start = rx.find(0xC1)
                 if start >= 0 and len(rx[start:]) >= 10:
                     payload = rx[start + 3: start + 10]
 
-                    # 解析
                     mod_addr = f"0x{payload[0]:02X}{payload[1]:02X}"
                     net_id = payload[2]
 
@@ -569,11 +575,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
                     ch = payload[5] & 0x7F
                     trans_mode = (payload[6] >> 6) & 0x01
 
-                    # 更新UI
                     self.tx_channel = ch
                     self.spin_CtrlCh.setValue(ch)
 
-                    # 弹窗显示
                     msg = (
                         f"模块地址: {mod_addr}\n"
                         f"网络ID: {net_id}\n"
@@ -588,7 +592,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
                     )
                     QMessageBox.information(self, "查询结果", msg)
                 else:
-                    QMessageBox.warning(self, "查询结果", f"回复数据长度不足或格式错误: {rx.hex().upper()}")
+                    QMessageBox.warning(self, "查询结果", f"回复数据长度不足或格式错误")
             else:
                 QMessageBox.warning(self, "查询结果", "查询超时，无回复。")
 
@@ -601,10 +605,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
     def _set_ctrl_channel(self):
         if not self._ensure_serial(): return
         ch = int(self.spin_CtrlCh.value())
-        # 预留：此处应下发配置指令，与_init_controller类似，只是指令内容不同
+        # 这里需要实现类似 _init_controller 的逻辑，但发出的指令不同
         self._todo(f"设置信道到 {ch} (需实现对应指令)")
 
-    # 辅助转换函数
     def _baud_rate_to_str(self, idx):
         m = {0: "1200", 1: "2400", 2: "4800", 3: "9600", 4: "19200", 5: "38400", 6: "57600", 7: "115200"}
         return m.get(idx, f"Unknown({idx})")
@@ -626,7 +629,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         return m.get(idx, f"Unknown({idx})")
 
     # ======================================================================
-    # 串口收包与解析 (保持不变)
+    # 串口收包与解析 (适配新版 LoraProtocol)
     # ======================================================================
     def _poll_serial(self):
         if self._closing or (self.ser is None) or (not self.ser.is_open):
@@ -664,88 +667,80 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
 
     def _handle_frame(self, pkt: bytes):
         try:
-            parsed = parse_frame(pkt)
+            # 使用 LoraProtocol 解析
+            parsed = LoraProtocol.parse_response(pkt)
         except Exception as e:
             self._log(f"[PARSE_ERR] {e} | raw={pkt.hex(' ')}")
             return
 
-        if not (parsed.get("head_ok") and parsed.get("tail_ok") and parsed.get("checksum_ok")):
-            self._log("[FRAME] 无效帧：头尾或校验失败。")
+        if not parsed.get("valid"):
+            self._log(f"[FRAME] 无效帧: {parsed.get('err')}")
             return
 
-        cmd = parsed.get("cmd")
-        fish_id = int(parsed.get("fish_id", 0))
-        data = parsed.get("data", [])
+        ftype = parsed.get("type")
+        fish_id = parsed.get("fish_id", 0)
 
         try:
-            if cmd == Command.CMD_REPLY:
-                self._handle_cmd_reply(fish_id, data, parsed)
-            elif cmd == Command.VOLT_PWR_REPLY:
-                self._handle_volt_power_reply(fish_id, data, parsed)
-            elif cmd == getattr(Command, "STATE_REPLY_1", None):
-                self._handle_state_reply_1(fish_id, data, parsed)
-            elif cmd == getattr(Command, "STATE_REPLY_2", None):
-                self._handle_state_reply_2(fish_id, data, parsed)
-            elif cmd == getattr(Command, "STATE_REPLY_3", None):
-                self._handle_state_reply_3(fish_id, data, parsed)
+            if ftype == "Reply":
+                self._handle_cmd_reply(fish_id, parsed)
+            elif ftype == "Power":
+                self._handle_volt_power_reply(fish_id, parsed)
+            elif ftype in ["Status", "Temp", "Servo", "Battery"]:
+                # 预留给其他状态回包
+                self._log(f"[FRAME] 收到 {ftype} 帧，来自 0x{fish_id:04X}")
             else:
-                self._log(f"[FRAME] 未处理的 CMD=0x{int(cmd):02X} 来自 0x{fish_id:04X}")
+                self._log(f"[FRAME] 未处理的帧类型 {ftype} 来自 0x{fish_id:04X}")
         except Exception as e:
             self._log(f"[DISPATCH_ERR] {e}")
 
-    def _handle_cmd_reply(self, fish_id: int, data: list, parsed: dict):
-        if not data or len(data) < 3:
-            self._log("[REPLY] 格式不完整。")
-            return
+    def _handle_cmd_reply(self, fish_id: int, parsed: Dict[str, Any]):
+        # parsed: {'valid': True, 'type': 'Reply', 'src_cmd': '0xba', 'err': 0, 'ok': True}
+        src_cmd_hex = parsed.get("src_cmd", "0x00")
+        src_cmd = int(src_cmd_hex, 16)
+        ok = parsed.get("ok")
+        err_code = parsed.get("err")
 
-        replied_cmd = data[0]
-        result = data[2]
-
-        if replied_cmd == getattr(Command, "SEARCH_DEVICES", None):
-            if result == 0:
+        # 0xBA = SEARCH_DEV
+        if src_cmd == Cmd.SEARCH_DEV:
+            if ok:
                 self._ensure_device_exists(fish_id)
                 self._log(f"[DEV] 搜索到设备：0x{fish_id:04X}")
             else:
-                self._log("[DEV] 搜索设备失败，请重试。")
+                self._log(f"[DEV] 搜索设备回复错误: err={err_code}")
             return
 
-        if replied_cmd == getattr(Command, "REPLY_CTRL", None):
-            if result == 0:
+        # 0xB0 = MSG_REPLY_CFG
+        if src_cmd == Cmd.MSG_REPLY_CFG:
+            if ok:
                 st = self.dev_state.get(fish_id)
                 if st:
+                    # 如果回复设置成功，且上次操作是开启，则 mute=False
                     st.mute = (not self.last_reply_enable)
                     self._update_device_tables_row(fish_id)
                 self._log(f"[DEV] 0x{fish_id:04X} 消息回复已设置为：{'开' if self.last_reply_enable else '关'}")
             else:
-                self._log(f"[DEV] 0x{fish_id:04X} 消息回复设置失败：code={result}")
+                self._log(f"[DEV] 0x{fish_id:04X} 消息回复设置失败：err={err_code}")
             return
 
-        self._log(f"[REPLY] fish=0x{fish_id:04X} replied_cmd=0x{replied_cmd:02X} result={result}")
+        self._log(f"[REPLY] fish=0x{fish_id:04X} src_cmd={src_cmd_hex} ok={ok}")
 
-    def _handle_volt_power_reply(self, fish_id: int, data: list, parsed: dict):
+    def _handle_volt_power_reply(self, fish_id: int, parsed: Dict[str, Any]):
+        # parsed: {'type': 'Power', 'volt': 4.0, 'mw': 1000}
         self._ensure_device_exists(fish_id)
         st = self.dev_state[fish_id]
 
         try:
-            if len(data) >= 3:
-                st.voltage_v = data[0] / 10.0
-                st.power_mw = (data[1] << 8) | data[2]
-                if not st.paired:
-                    st.paired = True
-                self._update_device_tables_row(fish_id)
-                self._update_monitor_tables_row(fish_id)
-                self._log(f"[PWR] 0x{fish_id:04X} V={st.voltage_v:.2f}V P={st.power_mw}mW")
+            st.voltage_v = parsed.get("volt")
+            st.power_mw = parsed.get("mw")
+
+            if not st.paired:
+                st.paired = True
+
+            self._update_device_tables_row(fish_id)
+            self._update_monitor_tables_row(fish_id)
+            self._log(f"[PWR] 0x{fish_id:04X} V={st.voltage_v:.2f}V P={st.power_mw}mW")
         except Exception as e:
             self._log(f"[PWR_ERR] {e}")
-
-    def _handle_state_reply_1(self, fish_id: int, data: list, parsed: dict):
-        self._todo("STATE_REPLY_1 解析并更新 UI")
-
-    def _handle_state_reply_2(self, fish_id: int, data: list, parsed: dict):
-        self._todo("STATE_REPLY_2 解析并更新 UI")
-
-    def _handle_state_reply_3(self, fish_id: int, data: list, parsed: dict):
-        self._todo("STATE_REPLY_3 解析并更新 UI")
 
     def _send_bytes(self, data: bytes, tag: str = "") -> bool:
         if not self._ensure_serial():
@@ -763,7 +758,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
 
     def _ensure_device_exists(self, fish_id: int):
         if fish_id not in self.devices:
-            self.devices[fish_id] = FishDevice(fish_id, self.default_password, self.tx_channel)
+            # 使用 LoraProtocol
+            self.devices[fish_id] = LoraProtocol(fish_id, self.default_password, self.tx_channel)
             self.dev_state[fish_id] = DeviceState(fish_id=fish_id)
             self._append_device_to_table(fish_id)
             self._append_monitor_row(fish_id)
@@ -873,13 +869,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
                     pass
         return ids
 
-    def _target_fishes(self) -> List[FishDevice]:
+    def _target_fishes(self) -> List[LoraProtocol]:
         ids = self._selected_target_ids()
-        fishes: List[FishDevice] = []
+        fishes: List[LoraProtocol] = []
         for fid in ids:
             dev = self.devices.get(fid)
             if dev is None:
-                dev = FishDevice(fid, self.default_password, self.tx_channel)
+                dev = LoraProtocol(fid, self.default_password, self.tx_channel)
                 self.devices[fid] = dev
                 self.dev_state[fid] = DeviceState(fish_id=fid)
             dev.channel = self.tx_channel
@@ -904,8 +900,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         if not self._ensure_serial():
             return
         try:
-            broadcast = FishDevice(0xFFFF, self.default_password, self.tx_channel)
-            frame = broadcast.search_devices()
+            # 广播搜索
+            broadcast = LoraProtocol(0xFFFF, self.default_password, self.tx_channel)
+            frame = broadcast.pack_search()
             if self._send_bytes(frame, tag="SearchDevices"):
                 self._status("已广播搜索设备。", 2000)
         except Exception as e:
@@ -939,8 +936,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         pwd = int(self.spin_F_Pwd.value()) & 0xFFFF
         try:
             for dev in targets:
-                if hasattr(dev, "set_password"):
-                    dev.set_password(pwd, send=False)
+                # 更新本地对象密码，下次发送命令时生效
+                dev.password = pwd
+
+            # 发送查询指令以确认通信（配对）
             self._query_volt_power()
             self._status(f"已向 {len(targets)} 台设备发送配对流程。", 3000)
         except Exception as e:
@@ -956,12 +955,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         if not targets:
             self._status("未勾选目标设备。", 3000)
             return
-        self._todo(f"急停(选中) {len(targets)} 台")
+        # 使用 pack_stop
+        for dev in targets:
+            self._send_bytes(dev.pack_stop(), tag="STOP_SEL")
+        self._status(f"已发送急停(选中)：{len(targets)} 台", 2000)
 
     def _global_stop_all(self):
         if not self._ensure_serial():
             return
-        self._todo("急停(全部)")
+        # 广播急停
+        bcast = LoraProtocol(0xFFFF, self.default_password, self.tx_channel)
+        self._send_bytes(bcast.pack_stop(), tag="STOP_ALL")
+        self._status("已发送广播急停", 2000)
 
     def _toggle_gear_cont(self, on: bool):
         if on:
@@ -983,11 +988,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         turn = int(self.spin_GearTurn.value())
         try:
             for dev in targets:
-                if hasattr(dev, "gear_ctrl"):
-                    frame = dev.gear_ctrl(speed, turn)
-                    self._send_bytes(frame, tag=f"GEAR 0x{dev.fish_id:04X} spd={speed} turn={turn}")
-                else:
-                    break
+                # 使用 pack_gear_mode
+                frame = dev.pack_gear_mode(speed, turn)
+                self._send_bytes(frame, tag=f"GEAR 0x{dev.fish_id:04X} spd={speed} turn={turn}")
                 self._sleep_ms(self.MULTI_SEND_GAP_MS)
             if not silent:
                 self._status(f"已发送档位指令：{len(targets)} 台设备。", 2000)
@@ -1031,15 +1034,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         ang2 = float(self.spin_S2.value())
         try:
             for dev in targets:
-                if mode_s1 and hasattr(dev, "servo_ctrl_sng"):
-                    frame = dev.servo_ctrl_sng(1, ang1)
+                if mode_s1:
+                    frame = dev.pack_position_single(1, ang1)
                     self._send_bytes(frame, tag=f"SERVO1 0x{dev.fish_id:04X} {ang1:.1f}")
-                elif mode_s2 and hasattr(dev, "servo_ctrl_sng"):
-                    frame = dev.servo_ctrl_sng(2, ang2)
+                elif mode_s2:
+                    frame = dev.pack_position_single(2, ang2)
                     self._send_bytes(frame, tag=f"SERVO2 0x{dev.fish_id:04X} {ang2:.1f}")
-                elif mode_dual and hasattr(dev, "servo_ctrl_dbl"):
-                    direction = 0x11 if ang1 >= 0 else 0x00
-                    frame = dev.servo_ctrl_dbl(direction, ang1, ang2)
+                elif mode_dual:
+                    # LoraProtocol 内部 pack_position_dual 已经处理了方向位逻辑
+                    frame = dev.pack_position_dual(ang1, ang2)
                     self._send_bytes(frame, tag=f"SERVO12 0x{dev.fish_id:04X} {ang1:.1f},{ang2:.1f}")
                 self._sleep_ms(self.MULTI_SEND_GAP_MS)
             if not silent:
@@ -1056,10 +1059,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
             return
         s1_on = self.chk_S1_Pwr.isChecked()
         s2_on = self.chk_S2_Pwr.isChecked()
-        self._todo(f"舵机供电：S1={'ON' if s1_on else 'OFF'} S2={'ON' if s2_on else 'OFF'}")
+        for dev in targets:
+            self._send_bytes(dev.pack_servo_power(s1_on, s2_on), tag="SERVO_PWR")
 
     def _query_servo_all_status(self):
-        self._todo("查询全部舵机状态")
+        if not self._ensure_serial(): return
+        targets = self._target_fishes()
+        for dev in targets:
+            self._send_bytes(dev.pack_query_servo_st(), tag="QRY_SRV_ST")
 
     def _toggle_cpg_cont(self, on: bool):
         if on:
@@ -1082,10 +1089,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         bias = float(self.spin_Bias.value())
         try:
             for dev in targets:
-                if hasattr(dev, "cpg_ctrl"):
-                    frame = dev.cpg_ctrl(amp, bias, freq)
-                    self._send_bytes(frame,
-                                     tag=f"CPG 0x{dev.fish_id:04X} amp={amp:.1f} bias={bias:.1f} freq={freq:.1f}")
+                frame = dev.pack_cpg(amp, bias, freq)
+                self._send_bytes(frame, tag=f"CPG 0x{dev.fish_id:04X} amp={amp:.1f} bias={bias:.1f} freq={freq:.1f}")
                 self._sleep_ms(self.MULTI_SEND_GAP_MS)
             if not silent:
                 self._status(f"已发送 CPG 参数：{len(targets)} 台设备。", 2000)
@@ -1102,9 +1107,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         play_id = int(self.spin_PlayId.value()) & 0xFF
         try:
             for dev in targets:
-                if hasattr(dev, "perf_ctrl"):
-                    frame = dev.perf_ctrl(play_id)
-                    self._send_bytes(frame, tag=f"PLAY 0x{dev.fish_id:04X} id={play_id}")
+                frame = dev.pack_play_mode(play_id)
+                self._send_bytes(frame, tag=f"PLAY 0x{dev.fish_id:04X} id={play_id}")
                 self._sleep_ms(self.MULTI_SEND_GAP_MS)
             self._status(f"已启动表演：{len(targets)} 台设备，序号={play_id}", 3000)
         except Exception as e:
@@ -1134,7 +1138,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
     def _factory_reset(self):
         ok = QMessageBox.question(self, "恢复出厂设置", "确定继续吗？") == QMessageBox.StandardButton.Yes
         if ok:
-            self._todo("恢复出厂设置")
+            targets = self._target_fishes()
+            for dev in targets:
+                self._send_bytes(dev.pack_factory_reset(), tag="FACTORY_RESET")
 
     def _reply_switch_dialog(self):
         if not self._ensure_serial():
@@ -1150,9 +1156,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         self.last_reply_enable = enable
         try:
             for dev in targets:
-                if hasattr(dev, "replySwitch"):
-                    frame = dev.replySwitch(enable)
-                    self._send_bytes(frame, tag=f"Reply={'ON' if enable else 'OFF'} 0x{dev.fish_id:04X}")
+                # 默认 10s 超时
+                frame = dev.pack_reply_config(10, enable)
+                self._send_bytes(frame, tag=f"Reply={'ON' if enable else 'OFF'} 0x{dev.fish_id:04X}")
                 self._sleep_ms(self.MULTI_SEND_GAP_MS)
             self._status(f"已设置消息应答：{'开启' if enable else '关闭'}", 3000)
         except Exception as e:
@@ -1167,9 +1173,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
             return
         try:
             for dev in targets:
-                if hasattr(dev, "query_voltage"):
-                    frame = dev.query_voltage(auto=False)
-                    self._send_bytes(frame, tag=f"QueryV/P 0x{dev.fish_id:04X}")
+                frame = dev.pack_query_volt()
+                self._send_bytes(frame, tag=f"QueryV/P 0x{dev.fish_id:04X}")
                 self._sleep_ms(self.MULTI_SEND_GAP_MS)
             self._status(f"已发送电压/功率查询：{len(targets)} 台设备。", 2500)
         except Exception as e:
