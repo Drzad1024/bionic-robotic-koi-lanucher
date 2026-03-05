@@ -97,6 +97,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
     READ_POLL_MS = 25  # 串口读轮询周期
     CONT_SEND_MS = 50  # 连续发送周期（20Hz）
     MULTI_SEND_GAP_MS = 10  # 多设备分发间隔
+    UNPAIR_ACK_TIMEOUT_MS = 300  # 取消配对应答超时（超时按离线取消成功处理）
 
     FRAME_HEADER = bytes([0xAA, 0x66])
 
@@ -120,10 +121,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         self.ctrl_id = 0x0001
         self._raw_rx_debug = False
         self._last_port_refresh_ts = 0.0
+        self._auto_config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "launcher_autosave.json")
 
         # ---------- 设备 ----------
         self.tx_channel = int(self.spin_CtrlCh.value())
-        self.default_password = 0x0000
+        self.control_password = 0x0000
         self.pending_ctrl_code: Optional[int] = None
         self.pending_fish_id_change: Dict[int, int] = {}
         self.devices: Dict[int, LoraProtocol] = {}
@@ -155,6 +157,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         self._init_tables()
         self._init_env_panels()
         self._refresh_ports(preserve=False)
+        self._load_auto_config()
 
         self._update_ui_state()
         self._status("准备就绪。请选择端口并点击“启动串口(&W)”。", 5000)
@@ -320,11 +323,39 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
 
         self.table_SysMonitor.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
         self.table_SysMonitor.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection)
-        self.table_SysMonitor.itemChanged.connect(lambda *_: self._update_ui_state())
+        self.table_SysMonitor.itemChanged.connect(lambda *_: (self._update_ui_state(), self._sync_fid_from_monitor_selection()))
 
         sm = self.table_SysMonitor.selectionModel()
         if sm:
-            sm.selectionChanged.connect(lambda *_: self._update_ui_state())
+            sm.selectionChanged.connect(lambda *_: (self._update_ui_state(), self._sync_fid_from_monitor_selection()))
+
+    def _sync_fid_from_monitor_selection(self):
+        target_id: Optional[int] = None
+
+        sm = self.table_SysMonitor.selectionModel()
+        if sm:
+            rows = sm.selectedRows(1)
+            if rows:
+                try:
+                    target_id = int((rows[0].data() or "").strip(), 16)
+                except Exception:
+                    target_id = None
+
+        if target_id is None:
+            for r in range(self.table_SysMonitor.rowCount()):
+                it_sel = self.table_SysMonitor.item(r, 0)
+                it_id = self.table_SysMonitor.item(r, 1)
+                if (it_sel is None) or (it_id is None):
+                    continue
+                if it_sel.checkState() == Qt.CheckState.Checked:
+                    try:
+                        target_id = int((it_id.text() or "").strip(), 16)
+                    except Exception:
+                        target_id = None
+                    break
+
+        if target_id is not None:
+            self._set_hex_widget_value(getattr(self, "txt_F_ID", None), target_id)
 
     def _format_hex16(self, value: int) -> str:
         return f"0x{(int(value) & 0xFFFF):04X}"
@@ -452,7 +483,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         if ctrl_code is None:
             QMessageBox.warning(self, "输入错误", "控制口令格式错误，请输入4位16进制（如 A1B2）。")
             return
-        self.default_password = ctrl_code
+        self.control_password = ctrl_code
         self._status(f"控制口令已更新：{self._format_hex16(ctrl_code)}", 2500)
 
     def _normalize_ctrl_id_input(self):
@@ -468,6 +499,176 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
     # ======================================================================
     # 菜单逻辑实现
     # ======================================================================
+    def _collect_config_data(self) -> Dict[str, Any]:
+        known_ids = sorted({int(fid) & 0xFFFF for fid in (list(self.devices.keys()) + list(self.dev_state.keys()))})
+
+        ctrl_pwd = self._second_password_value()
+        if ctrl_pwd is None:
+            ctrl_pwd = int(self.control_password) & 0xFFFF
+
+        cfg: Dict[str, Any] = {
+            "schema": "launcher.config.v2",
+            "timestamp": time.time(),
+            "serial": {
+                "port": (self.current_port or self.combo_Port.currentText() or "").strip(),
+                "ctrl_id": int(self.ctrl_id) & 0xFF,
+                "ctrl_ch": int(self.spin_CtrlCh.value()) & 0xFF,
+            },
+            "security": {
+                "control_password": int(ctrl_pwd) & 0xFFFF,
+            },
+            "devices": {
+                "known_ids": [f"0x{fid:04X}" for fid in known_ids],
+            },
+            "ui": {
+                "gear_spd": self.spin_GearSpeed.value(),
+                "gear_turn": self.spin_GearTurn.value(),
+                "cpg_amp": self.spin_Amp.value(),
+                "cpg_freq": self.spin_Freq.value(),
+                "cpg_bias": self.spin_Bias.value(),
+                "boot_id": self._get_hex_widget_value(self.txt_F_ID, 0x0001),
+                "boot_ch": self.spin_F_Ch.value(),
+                "fish_pwd": self._get_hex_widget_value(self.txt_F_Pwd, 0x0000),
+            },
+        }
+        return cfg
+
+    def _parse_fish_id_value(self, value: Any) -> Optional[int]:
+        try:
+            if isinstance(value, int):
+                fid = int(value)
+            elif isinstance(value, str):
+                txt = value.strip()
+                if not txt:
+                    return None
+                if txt.lower().startswith("0x"):
+                    fid = int(txt, 16)
+                else:
+                    fid = int(txt, 0)
+            else:
+                return None
+            if 0 <= fid <= 0xFFFF:
+                return fid
+        except Exception:
+            return None
+        return None
+
+    def _set_saved_port(self, port: str):
+        p = (port or "").strip()
+        if not p:
+            return
+        idx = self.combo_Port.findText(p, Qt.MatchFlag.MatchFixedString)
+        if idx < 0:
+            self.combo_Port.addItem(p)
+            idx = self.combo_Port.findText(p, Qt.MatchFlag.MatchFixedString)
+        if idx >= 0:
+            self.combo_Port.setCurrentIndex(idx)
+
+    def _apply_config_data(self, cfg: Dict[str, Any], source: str = "manual"):
+        serial_cfg = cfg.get("serial") if isinstance(cfg.get("serial"), dict) else {}
+        sec_cfg = cfg.get("security") if isinstance(cfg.get("security"), dict) else {}
+        dev_cfg = cfg.get("devices") if isinstance(cfg.get("devices"), dict) else {}
+        ui_cfg = cfg.get("ui") if isinstance(cfg.get("ui"), dict) else cfg
+
+        saved_port = serial_cfg.get("port")
+        if isinstance(saved_port, str):
+            self._set_saved_port(saved_port)
+
+        ctrl_ch = serial_cfg.get("ctrl_ch", cfg.get("ctrl_ch"))
+        if isinstance(ctrl_ch, (int, float)):
+            self.spin_CtrlCh.setValue(int(ctrl_ch) & 0xFF)
+            self.tx_channel = int(ctrl_ch) & 0xFF
+
+        ctrl_id = serial_cfg.get("ctrl_id", cfg.get("ctrl_id"))
+        if isinstance(ctrl_id, (int, float)):
+            self.ctrl_id = int(ctrl_id) & 0xFF
+            self._set_hex_widget_value(getattr(self, "lbl_CtrlID_Val", None), self.ctrl_id)
+
+        ctrl_pwd = sec_cfg.get("control_password", cfg.get("control_password"))
+        if isinstance(ctrl_pwd, (int, float)):
+            pwd = int(ctrl_pwd) & 0xFFFF
+            self.control_password = pwd
+            if hasattr(self, "lineEdit_SecondPWD"):
+                self.lineEdit_SecondPWD.setText(f"{pwd:04X}")
+
+        if "gear_spd" in ui_cfg:
+            self.spin_GearSpeed.setValue(int(ui_cfg["gear_spd"]))
+        if "gear_turn" in ui_cfg:
+            self.spin_GearTurn.setValue(int(ui_cfg["gear_turn"]))
+        if "cpg_amp" in ui_cfg:
+            self.spin_Amp.setValue(float(ui_cfg["cpg_amp"]))
+        if "cpg_freq" in ui_cfg:
+            self.spin_Freq.setValue(float(ui_cfg["cpg_freq"]))
+        if "cpg_bias" in ui_cfg:
+            self.spin_Bias.setValue(float(ui_cfg["cpg_bias"]))
+        if "boot_id" in ui_cfg:
+            self._set_hex_widget_value(self.txt_F_ID, int(ui_cfg["boot_id"]))
+        if "boot_ch" in ui_cfg:
+            self.spin_F_Ch.setValue(int(ui_cfg["boot_ch"]))
+        if "fish_pwd" in ui_cfg:
+            self._set_hex_widget_value(self.txt_F_Pwd, int(ui_cfg["fish_pwd"]))
+
+        known_ids_raw = dev_cfg.get("known_ids", cfg.get("known_devices", []))
+        if isinstance(known_ids_raw, list):
+            known_ids: List[int] = []
+            seen = set()
+            for raw in known_ids_raw:
+                fid = self._parse_fish_id_value(raw)
+                if fid is None:
+                    continue
+                if fid in seen:
+                    continue
+                seen.add(fid)
+                known_ids.append(fid)
+
+            self._clear_all_devices()
+            for fid in sorted(known_ids):
+                self._ensure_device_exists(fid)
+                st = self.dev_state.get(fid)
+                if st is not None:
+                    st.paired = False
+                self._update_device_tables_row(fid)
+
+            # 新开软件或加载配置后，系统监视保持为空（配对需重新执行）
+            self.table_SysMonitor.setRowCount(0)
+
+        self._update_ui_state()
+        if source == "auto":
+            self._log("[CFG] 已自动加载本地配置。")
+        else:
+            self._status("配置已导入。", 2500)
+
+    def _save_config_to_path(self, path: str, source: str = "manual"):
+        cfg = self._collect_config_data()
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(cfg, f, ensure_ascii=False, indent=4)
+        if source == "auto":
+            self._log(f"[CFG] 自动保存配置: {path}")
+        else:
+            self._status(f"配置已保存：{path}")
+
+    def _load_config_from_path(self, path: str, source: str = "manual"):
+        with open(path, 'r', encoding='utf-8') as f:
+            cfg = json.load(f)
+        if not isinstance(cfg, dict):
+            raise ValueError("配置格式错误：根节点应为对象")
+        self._apply_config_data(cfg, source=source)
+
+    def _load_auto_config(self):
+        if not os.path.exists(self._auto_config_path):
+            return
+        try:
+            self._load_config_from_path(self._auto_config_path, source="auto")
+            self._status("已自动加载上次配置。", 2000)
+        except Exception as e:
+            self._log(f"[CFG_AUTO_LOAD_ERR] {e}")
+
+    def _save_auto_config(self):
+        try:
+            self._save_config_to_path(self._auto_config_path, source="auto")
+        except Exception as e:
+            self._log(f"[CFG_AUTO_SAVE_ERR] {e}")
+
     def _menu_load_config(self):
         """载入配置文件 (JSON)"""
         path, _ = QFileDialog.getOpenFileName(self, "载入配置", "", "JSON Files (*.json);;All Files (*)")
@@ -475,49 +676,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
             return
 
         try:
-            with open(path, 'r', encoding='utf-8') as f:
-                cfg = json.load(f)
-
-            # 恢复 UI 状态
-            if "ctrl_ch" in cfg: self.spin_CtrlCh.setValue(cfg["ctrl_ch"])
-
-            if "gear_spd" in cfg: self.spin_GearSpeed.setValue(cfg["gear_spd"])
-            if "gear_turn" in cfg: self.spin_GearTurn.setValue(cfg["gear_turn"])
-
-            if "cpg_amp" in cfg: self.spin_Amp.setValue(cfg["cpg_amp"])
-            if "cpg_freq" in cfg: self.spin_Freq.setValue(cfg["cpg_freq"])
-            if "cpg_bias" in cfg: self.spin_Bias.setValue(cfg["cpg_bias"])
-
-            if "boot_id" in cfg: self._set_hex_widget_value(self.txt_F_ID, cfg["boot_id"])
-            if "boot_ch" in cfg: self.spin_F_Ch.setValue(cfg["boot_ch"])
-
-            self._status(f"配置已载入：{os.path.basename(path)}")
+            self._load_config_from_path(path, source="manual")
+            self._status(f"配置已载入：{os.path.basename(path)}", 2500)
         except Exception as e:
             QMessageBox.warning(self, "载入失败", f"无法解析配置文件：\n{e}")
 
     def _menu_save_config(self):
         """保存当前 UI 配置到文件"""
-        cfg = {
-            "timestamp": time.time(),
-            "ctrl_ch": self.spin_CtrlCh.value(),
-            "gear_spd": self.spin_GearSpeed.value(),
-            "gear_turn": self.spin_GearTurn.value(),
-            "cpg_amp": self.spin_Amp.value(),
-            "cpg_freq": self.spin_Freq.value(),
-            "cpg_bias": self.spin_Bias.value(),
-            "boot_id": self._get_hex_widget_value(self.txt_F_ID, 0x0001),
-            "boot_ch": self.spin_F_Ch.value(),
-            # 可按需扩展
-        }
-
-        path, _ = QFileDialog.getSaveFileName(self, "保存配置", "config.json", "JSON Files (*.json)")
+        path, _ = QFileDialog.getSaveFileName(self, "保存配置", "launcher_config.json", "JSON Files (*.json)")
         if not path:
             return
 
         try:
-            with open(path, 'w', encoding='utf-8') as f:
-                json.dump(cfg, f, indent=4)
-            self._status(f"配置已保存：{path}")
+            self._save_config_to_path(path, source="manual")
         except Exception as e:
             QMessageBox.warning(self, "保存失败", f"写入文件错误：\n{e}")
 
@@ -630,7 +801,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
 
     def _send_v21_cmd(self, target_id: int, cmd: int, payload: bytes = b"", tag: str = "",
                       password: Optional[int] = None) -> bool:
-        pwd = self.default_password if password is None else int(password)
+        pwd = self.control_password if password is None else int(password)
         inner = self._build_v21_frame(self.ctrl_id, pwd, cmd, payload)
         frame = self._wrap_target_channel(target_id, self.tx_channel, inner)
         return self._send_bytes(frame, tag=tag or f"CMD 0x{cmd:02X}")
@@ -1110,9 +1281,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
 
         new_ch = int(self.spin_CtrlCh.value()) & 0xFF
         old_ch = int(self.tx_channel) & 0xFF
+        keep_id = int(self.ctrl_id) & 0xFF
 
-        cmd = bytes([0xC0, 0x00, 0x07, 0x00, 0x01, 0x00, 0xE7, 0x00, new_ch, 0x43])
-        expected = bytes([0xC1, 0x00, 0x07, 0x00, 0x01, 0x00, 0xE7, 0x00, new_ch, 0x43])
+        cmd = bytes([0xC0, 0x00, 0x07, (keep_id >> 8) & 0xFF, keep_id & 0xFF, 0x00, 0xE7, 0x00, new_ch, 0x43])
+        expected = bytes([0xC1, 0x00, 0x07, (keep_id >> 8) & 0xFF, keep_id & 0xFF, 0x00, 0xE7, 0x00, new_ch, 0x43])
 
         ok = False
         rx_accum = b""
@@ -1301,7 +1473,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
             if st:
                 st.paired = True
             if self.pending_ctrl_code is not None:
-                self.default_password = int(self.pending_ctrl_code) & 0xFFFF
+                self.control_password = int(self.pending_ctrl_code) & 0xFFFF
             self._update_device_tables_row(fish_id)
             self._ensure_monitor_row(fish_id)
             self._send_v21_cmd(fish_id, 0xC1, b"", tag="QUERY_STAT")
@@ -1396,11 +1568,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
             self._log(f"[F3] 0x{fish_id:04X} BootMode={boot_mode}, Reply={'开' if reply_en == 0 else '关'}")
 
     def _handle_flash_reply_f4(self, fish_id: int, payload: bytes):
-        if len(payload) < 4:
+        if len(payload) < 3:
             self._log(f"[F4] 长度不足: {payload.hex(' ').upper()}")
             return
-        addr = int.from_bytes(payload[0:2], "big")
-        data = int.from_bytes(payload[2:4], "big")
+
+        # 新协议: offset(1B) + data(2B)
+        # 兼容旧协议: addr(2B) + data(2B)
+        if len(payload) >= 4:
+            addr = int.from_bytes(payload[0:2], "big")
+            data = int.from_bytes(payload[2:4], "big")
+        else:
+            addr = int(payload[0]) & 0xFF
+            data = int.from_bytes(payload[1:3], "big")
         self._log(f"[F4] 0x{fish_id:04X} Flash[0x{addr:04X}] = 0x{data:04X}")
 
     def _handle_version_reply_f5(self, fish_id: int, payload: bytes):
@@ -1476,7 +1655,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
     # ======================================================================
     def _ensure_device_exists(self, fish_id: int):
         if fish_id not in self.devices:
-            self.devices[fish_id] = LoraProtocol(fish_id, self.default_password, self.tx_channel)
+            self.devices[fish_id] = LoraProtocol(fish_id, self.control_password, self.tx_channel)
             self.dev_state[fish_id] = DeviceState(fish_id=fish_id)
             self._append_device_to_table(fish_id)
 
@@ -1561,7 +1740,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         self.dev_state.pop(new_id, None)
 
         if old_dev is None:
-            old_dev = LoraProtocol(new_id, self.default_password, self.tx_channel)
+            old_dev = LoraProtocol(new_id, self.control_password, self.tx_channel)
         old_dev.fish_id = new_id
         self.devices[new_id] = old_dev
 
@@ -1669,7 +1848,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         for fid in self._selected_target_ids():
             dev = self.devices.get(fid)
             if not dev:
-                dev = LoraProtocol(fid, self.default_password, self.tx_channel)
+                dev = LoraProtocol(fid, self.control_password, self.tx_channel)
                 self.devices[fid] = dev
                 self.dev_state[fid] = DeviceState(fish_id=fid)
             dev.channel = self.tx_channel
@@ -1755,8 +1934,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
             self._send_v21_cmd(fish_id, 0xD7, payload, tag=f"SET_PWD 0x{fish_id:04X}")
             self._sleep_ms(self.MULTI_SEND_GAP_MS)
 
-        self.default_password = new_pwd
-        self._status(f"已发送密码修改指令：{self._format_hex16(new_pwd)}", 3000)
+        self._status(
+            f"已发送新密码写入指令：{self._format_hex16(new_pwd)}（仅影响下次配对，当前控制口令不变）",
+            3500
+        )
 
     def _pair_selected_devices(self):
         if not self._ensure_serial(): return
@@ -1774,6 +1955,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         except Exception:
             QMessageBox.warning(self, "输入错误", "密码格式错误，请使用 0x0000 这种HEX格式。")
             return
+
+        # 记录“配对密码”作为下次默认值，不影响当前“控制口令”
+        self._set_hex_widget_value(getattr(self, "txt_F_Pwd", None), pwd)
 
         ctrl_code = self._second_password_value()
         if ctrl_code is None:
@@ -1797,13 +1981,39 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         if not self._ensure_serial(): return
         target_ids = self._selected_device_ids_in_devices_table()
         send_count = 0
+        timeout_success_count = 0
+        response_success_count = 0
         for fish_id in target_ids:
             st = self.dev_state.get(fish_id)
             if not st or (not st.paired):
                 continue
             self._send_v21_cmd(fish_id, 0x91, b"", tag=f"UNPAIR 0x{fish_id:04X}")
             send_count += 1
-        self._status(f"已发送取消配对 ({send_count} 台)", 2500)
+
+            self._process_events_ms(self.UNPAIR_ACK_TIMEOUT_MS)
+
+            st_after = self.dev_state.get(fish_id)
+            if st_after and (not st_after.paired):
+                response_success_count += 1
+                continue
+
+            if st_after:
+                st_after.paired = False
+            self._update_device_tables_row(fish_id)
+            self._remove_monitor_row(fish_id)
+            timeout_success_count += 1
+            self._log(
+                f"[UNPAIR] 0x{fish_id:04X} 在 {self.UNPAIR_ACK_TIMEOUT_MS}ms 内未收到应答，按离线取消配对成功处理"
+            )
+
+        self._update_ui_state()
+        if send_count == 0:
+            self._status("未找到可取消配对的设备", 2500)
+        else:
+            self._status(
+                f"取消配对完成：应答成功{response_success_count}台，超时判成功{timeout_success_count}台",
+                3500
+            )
 
     def _global_stop_selected(self):
         if not self._ensure_serial(): return
@@ -2007,13 +2217,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
 
     def _query_flash(self):
         if not self._ensure_serial(): return
-        offset, ok = QInputDialog.getInt(self, "查询 Flash", "Offset (0-24):", 0, 0, 24, 1)
+        offset, ok = QInputDialog.getInt(self, "查询 Flash", "Offset (0x00-0x1C, 仅偶数):", 0, 0, 0x1C, 2)
         if not ok:
             return
+        if (offset < 0) or (offset > 0x1C) or ((offset & 0x01) != 0):
+            QMessageBox.warning(self, "输入错误", "Offset 必须是 0x00~0x1C 范围内的偶数。")
+            return
         for fish_id in self._selected_target_ids():
-            self._send_v21_cmd(fish_id, 0xD4, bytes([offset & 0xFF]), tag=f"FLASH_OFFSET {offset}")
-            self._sleep_ms(self.MULTI_SEND_GAP_MS)
-            self._send_v21_cmd(fish_id, 0xC4, b"", tag="QUERY_FLASH")
+            self._send_v21_cmd(fish_id, 0xD4, bytes([offset & 0xFF]), tag=f"FLASH_QUERY_OFFSET {offset}")
             self._sleep_ms(self.MULTI_SEND_GAP_MS)
 
     def _reset_faulty_servo(self):
@@ -2267,6 +2478,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         self._closing = True
+        self._save_auto_config()
         self._close_serial(clear_devices=False)
         event.accept()
 

@@ -1,0 +1,27 @@
+{
+    "schema": "launcher.config.v2",
+    "timestamp": 1772725634.8482862,
+    "serial": {
+        "port": "COM3",
+        "ctrl_id": 254,
+        "ctrl_ch": 21
+    },
+    "security": {
+        "control_password": 63373
+    },
+    "devices": {
+        "known_ids": [
+            "0x84AB"
+        ]
+    },
+    "ui": {
+        "gear_spd": 0,
+        "gear_turn": 8,
+        "cpg_amp": 20.7,
+        "cpg_freq": 2.9,
+        "cpg_bias": -0.5,
+        "boot_id": 33963,
+        "boot_ch": 21,
+        "fish_pwd": 0
+    }
+}
