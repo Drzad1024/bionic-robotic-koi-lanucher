@@ -408,12 +408,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         widget.textChanged.connect(lambda: self._normalize_hex_widget(widget, default))
 
     def _init_hex_fields(self):
-        self._bind_hex_plaintext(getattr(self, "lbl_CtrlID_Val", None), 0x0001)
         self._bind_hex_plaintext(getattr(self, "txt_F_ID", None), 0x0001)
         self._bind_hex_plaintext(getattr(self, "txt_F_Pwd", None), 0x0000)
 
         if hasattr(self, "lbl_CtrlID_Val"):
-            self.lbl_CtrlID_Val.setMaxLength(4)
+            self.lbl_CtrlID_Val.setMaxLength(6)
             self.lbl_CtrlID_Val.textChanged.connect(self._normalize_ctrl_id_input)
             self._set_hex_widget_value(self.lbl_CtrlID_Val, self.ctrl_id)
 
@@ -460,9 +459,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         if not hasattr(self, "lbl_CtrlID_Val"):
             return
         old = self.lbl_CtrlID_Val.blockSignals(True)
-        txt = (self.lbl_CtrlID_Val.text() or "").upper()
-        txt = ''.join(ch for ch in txt if ch in "0123456789ABCDEF")[-2:]
-        self.lbl_CtrlID_Val.setText(txt)
+        txt = (self.lbl_CtrlID_Val.text() or "").strip().upper()
+        hex_chars = ''.join(ch for ch in txt if ch in "0123456789ABCDEF")
+        two_hex = (hex_chars[-2:] if hex_chars else "00").rjust(2, "0")
+        self.lbl_CtrlID_Val.setText(f"0x{two_hex}")
         self.lbl_CtrlID_Val.blockSignals(old)
 
     # ======================================================================
@@ -929,6 +929,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
             # 2. 握手探测
             detected_version = None
 
+            def _apply_ctrl_params_from_handshake(rx_bytes: bytes):
+                head = bytes([0xC1, 0x00, 0x07])
+                start = rx_bytes.find(head)
+                if start < 0 or len(rx_bytes[start:]) < 10:
+                    return
+                payload = rx_bytes[start + 3: start + 10]
+                ctrl_id = ((payload[0] << 8) | payload[1]) & 0x00FF
+                ch = payload[5] & 0x7F
+                self.ctrl_id = ctrl_id
+                self.tx_channel = ch
+                self.spin_CtrlCh.setValue(ch)
+                self._set_hex_widget_value(getattr(self, "lbl_CtrlID_Val", None), ctrl_id)
+                self._log(f"[HANDSHAKE] 参数回填: CtrlID={self._format_hex8(ctrl_id)}, CH={ch}")
+
             def try_handshake(rts_val: bool) -> bool:
                 try:
                     self.ser.rts = rts_val
@@ -939,12 +953,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
                     self.ser.flush()
                     self._log(f"[HANDSHAKE] TX (RTS={rts_val}): C1 00 07")
 
+                    rx_accum = b""
                     t0 = time.perf_counter()
                     while (time.perf_counter() - t0) < 0.2:
                         if self.ser.in_waiting > 0:
                             raw = self.ser.read(min(self.ser.in_waiting, 128))
+                            rx_accum += raw
                             self._log(f"[HANDSHAKE] RX: {raw.hex(' ').upper()}")
-                            return True
+                            head = bytes([0xC1, 0x00, 0x07])
+                            start = rx_accum.find(head)
+                            if start >= 0 and len(rx_accum[start:]) >= 10:
+                                _apply_ctrl_params_from_handshake(rx_accum)
+                                return True
                         self._sleep_ms(10)
                 except Exception as e:
                     self._log(f"[HANDSHAKE_ERR] RTS={rts_val} err={e}")
@@ -1005,14 +1025,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
             self._log(f"[CFG_EXIT] 115200, RTS={self.ser.rts}")
             self._sleep_ms(20)
 
-    def _send_config_cmd_and_wait(self, cmd_hex: str, expected_hex: str = None, timeout_s: float = 0.3) -> Optional[
-        bytes]:
+    def _send_config_cmd_and_wait(self, cmd_hex: str, expected_hex: str = None,
+                                  timeout_s: float = 0.3, expected_min_len: int = 0) -> Optional[bytes]:
         cmd_bytes = bytes.fromhex(cmd_hex)
         self.ser.write(cmd_bytes)
         self.ser.flush()
         # 显式日志，因为这是在 poll_serial 暂停期间发送的
         self._log(f"[CFG] TX: {cmd_bytes.hex(' ').upper()}")
 
+        expect = bytes.fromhex(expected_hex) if expected_hex else None
         rx_accum = b""
         t0 = time.perf_counter()
         while (time.perf_counter() - t0) < timeout_s:
@@ -1020,8 +1041,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
                 chunk = self.ser.read(self.ser.in_waiting)
                 rx_accum += chunk
                 self._log(f"[CFG] RX: {chunk.hex(' ').upper()}")
-                if expected_hex and bytes.fromhex(expected_hex) in rx_accum:
-                    return rx_accum
+                if expect and expect in rx_accum:
+                    if expected_min_len <= 0:
+                        return rx_accum
+                    start = rx_accum.find(expect)
+                    if start >= 0 and len(rx_accum[start:]) >= expected_min_len:
+                        return rx_accum
             self._sleep_ms(5)
         return rx_accum if rx_accum else None
 
@@ -1051,7 +1076,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
             self.read_timer.stop()
             self._enter_config_mode()
             cmd = "C1 00 07"
-            rx = self._send_config_cmd_and_wait(cmd, None, 0.4)
+            rx = self._send_config_cmd_and_wait(cmd, "C1 00 07", 0.25, 10)
             if rx and len(rx) >= 10:
                 start = rx.find(0xC1)
                 if start >= 0 and len(rx[start:]) >= 10:
@@ -1065,10 +1090,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
                     self.ctrl_id = ((payload[0] << 8) | payload[1]) & 0x00FF
                     self.spin_CtrlCh.setValue(ch)
                     self._set_hex_widget_value(self.lbl_CtrlID_Val, self.ctrl_id)
+                    self._status(f"控制器参数已更新：ID={self._format_hex8(self.ctrl_id)}, CH={ch}", 3000)
                     QMessageBox.information(self, "查询结果", f"模块地址: {mod_addr}\n信道: {ch}\n(完整信息见日志)")
                 else:
+                    self._status("查询参数失败：返回数据格式错误", 3000)
                     QMessageBox.warning(self, "查询结果", "数据格式错误")
             else:
+                self._status("查询参数失败：查询超时", 3000)
                 QMessageBox.warning(self, "查询结果", "查询超时")
         except Exception as e:
             self._log(f"[QUERY_ERR] {e}")
@@ -1083,9 +1111,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         new_ch = int(self.spin_CtrlCh.value()) & 0xFF
         old_ch = int(self.tx_channel) & 0xFF
 
-        old_baud = self.ser.baudrate
-        old_rts = bool(self.ser.rts)
-
         cmd = bytes([0xC0, 0x00, 0x07, 0x00, 0x01, 0x00, 0xE7, 0x00, new_ch, 0x43])
         expected = bytes([0xC1, 0x00, 0x07, 0x00, 0x01, 0x00, 0xE7, 0x00, new_ch, 0x43])
 
@@ -1095,10 +1120,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         try:
             self.read_timer.stop()
 
-            self.ser.baudrate = 9600
-            self.ser.rts = False
-            self._sleep_ms(20)
-            self.ser.reset_input_buffer()
+            if not self._enter_config_mode():
+                return
 
             self.ser.write(cmd)
             self.ser.flush()
@@ -1118,9 +1141,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
             ok = False
         finally:
             try:
-                self.ser.baudrate = old_baud
-                self.ser.rts = old_rts
-                self._sleep_ms(10)
+                self._exit_config_mode()
             except Exception:
                 pass
             self.read_timer.start(self.READ_POLL_MS)
@@ -1128,9 +1149,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         if ok:
             self.tx_channel = new_ch
             self._log(f"[SET_CH] ACK: {expected.hex(' ').upper()}")
+            self._status(f"设置信道成功：CH={new_ch}", 3000)
+            QMessageBox.information(self, "设置信道", f"信道设置成功：CH={new_ch}")
             return
 
         self.spin_CtrlCh.setValue(old_ch)
+        self._status("设置信道失败：未收到确认帧", 3500)
         QMessageBox.warning(
             self,
             "设置信道失败",
@@ -1149,8 +1173,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
 
         old_id = int(self.ctrl_id) & 0xFFFF
         ch = int(self.spin_CtrlCh.value()) & 0xFF
-        old_baud = self.ser.baudrate
-        old_rts = bool(self.ser.rts)
 
         cmd = bytes([0xC0, 0x00, 0x07, (new_id >> 8) & 0xFF, new_id & 0xFF, 0x00, 0xE7, 0x00, ch, 0x43])
         expected = bytes([0xC1, 0x00, 0x07, (new_id >> 8) & 0xFF, new_id & 0xFF, 0x00, 0xE7, 0x00, ch, 0x43])
@@ -1159,10 +1181,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         rx_accum = b""
         try:
             self.read_timer.stop()
-            self.ser.baudrate = 9600
-            self.ser.rts = False
-            self._sleep_ms(20)
-            self.ser.reset_input_buffer()
+
+            if not self._enter_config_mode():
+                return
 
             self.ser.write(cmd)
             self.ser.flush()
@@ -1182,9 +1203,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
             ok = False
         finally:
             try:
-                self.ser.baudrate = old_baud
-                self.ser.rts = old_rts
-                self._sleep_ms(10)
+                self._exit_config_mode()
             except Exception:
                 pass
             self.read_timer.start(self.READ_POLL_MS)
@@ -1193,9 +1212,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
             self.ctrl_id = new_id & 0xFF
             self._log(f"[SET_ID] ACK: {expected.hex(' ').upper()}")
             self._status(f"控制器ID已设置为 {self._format_hex8(new_id)}", 2500)
+            QMessageBox.information(self, "设置ID", f"控制器ID设置成功：{self._format_hex8(new_id)}")
             return
 
         self._set_hex_widget_value(getattr(self, "lbl_CtrlID_Val", None), old_id)
+        self._status("设置ID失败：未收到确认帧", 3500)
         QMessageBox.warning(
             self,
             "设置ID失败",

@@ -29,7 +29,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(1044, 882)
+        MainWindow.resize(1117, 940)
         font = QFont()
         font.setFamilies([u"MS Shell Dlg 2"])
         font.setPointSize(10)
@@ -616,7 +616,7 @@ class Ui_MainWindow(object):
         self.layout_ServoMode.setObjectName(u"layout_ServoMode")
         self.radio_S1_Only = QRadioButton(self.grp_Servo_Pos)
         self.radio_S1_Only.setObjectName(u"radio_S1_Only")
-        self.radio_S1_Only.setChecked(True)
+        self.radio_S1_Only.setChecked(False)
 
         self.layout_ServoMode.addWidget(self.radio_S1_Only)
 
@@ -627,6 +627,7 @@ class Ui_MainWindow(object):
 
         self.radio_Dual_Sync = QRadioButton(self.grp_Servo_Pos)
         self.radio_Dual_Sync.setObjectName(u"radio_Dual_Sync")
+        self.radio_Dual_Sync.setChecked(True)
 
         self.layout_ServoMode.addWidget(self.radio_Dual_Sync)
 
@@ -1921,6 +1922,106 @@ class Ui_MainWindow(object):
         self.horizontalLayout_Env.addWidget(self.grp_CompEnv)
 
         self.tabWidget_Main.addTab(self.tab_Env, "")
+        self.tab_FirmwareBurn = QWidget()
+        self.tab_FirmwareBurn.setObjectName(u"tab_FirmwareBurn")
+        self.verticalLayout_9 = QVBoxLayout(self.tab_FirmwareBurn)
+        self.verticalLayout_9.setObjectName(u"verticalLayout_9")
+        self.grp_FirmwareOTA = QGroupBox(self.tab_FirmwareBurn)
+        self.grp_FirmwareOTA.setObjectName(u"grp_FirmwareOTA")
+        sizePolicy5 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        sizePolicy5.setHorizontalStretch(0)
+        sizePolicy5.setVerticalStretch(20)
+        sizePolicy5.setHeightForWidth(self.grp_FirmwareOTA.sizePolicy().hasHeightForWidth())
+        self.grp_FirmwareOTA.setSizePolicy(sizePolicy5)
+        self.verticalLayout_8 = QVBoxLayout(self.grp_FirmwareOTA)
+        self.verticalLayout_8.setObjectName(u"verticalLayout_8")
+        self.label_7 = QLabel(self.grp_FirmwareOTA)
+        self.label_7.setObjectName(u"label_7")
+        sizePolicy5.setHeightForWidth(self.label_7.sizePolicy().hasHeightForWidth())
+        self.label_7.setSizePolicy(sizePolicy5)
+
+        self.verticalLayout_8.addWidget(self.label_7)
+
+        self.btn_EnterUploadMode = QPushButton(self.grp_FirmwareOTA)
+        self.btn_EnterUploadMode.setObjectName(u"btn_EnterUploadMode")
+        sizePolicy.setHeightForWidth(self.btn_EnterUploadMode.sizePolicy().hasHeightForWidth())
+        self.btn_EnterUploadMode.setSizePolicy(sizePolicy)
+        self.btn_EnterUploadMode.setMinimumSize(QSize(0, 32))
+
+        self.verticalLayout_8.addWidget(self.btn_EnterUploadMode)
+
+        self.horizontalLayout_7 = QHBoxLayout()
+        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
+        self.lineEdit_HexFilePath = QLineEdit(self.grp_FirmwareOTA)
+        self.lineEdit_HexFilePath.setObjectName(u"lineEdit_HexFilePath")
+        self.lineEdit_HexFilePath.setMinimumSize(QSize(0, 32))
+        self.lineEdit_HexFilePath.setReadOnly(True)
+        self.lineEdit_HexFilePath.setCursorMoveStyle(Qt.CursorMoveStyle.LogicalMoveStyle)
+
+        self.horizontalLayout_7.addWidget(self.lineEdit_HexFilePath)
+
+        self.btn_SelectHexFile = QPushButton(self.grp_FirmwareOTA)
+        self.btn_SelectHexFile.setObjectName(u"btn_SelectHexFile")
+        self.btn_SelectHexFile.setMinimumSize(QSize(0, 32))
+
+        self.horizontalLayout_7.addWidget(self.btn_SelectHexFile)
+
+
+        self.verticalLayout_8.addLayout(self.horizontalLayout_7)
+
+        self.btn_ConfirmUpload = QPushButton(self.grp_FirmwareOTA)
+        self.btn_ConfirmUpload.setObjectName(u"btn_ConfirmUpload")
+        self.btn_ConfirmUpload.setMinimumSize(QSize(0, 32))
+
+        self.verticalLayout_8.addWidget(self.btn_ConfirmUpload)
+
+        self.progressBar_FirmwareUpload = QProgressBar(self.grp_FirmwareOTA)
+        self.progressBar_FirmwareUpload.setObjectName(u"progressBar_FirmwareUpload")
+        self.progressBar_FirmwareUpload.setMinimumSize(QSize(0, 32))
+        self.progressBar_FirmwareUpload.setMinimum(0)
+        self.progressBar_FirmwareUpload.setMaximum(100)
+        self.progressBar_FirmwareUpload.setValue(0)
+
+        self.verticalLayout_8.addWidget(self.progressBar_FirmwareUpload)
+
+
+        self.verticalLayout_9.addWidget(self.grp_FirmwareOTA)
+
+        self.groupBox_2 = QGroupBox(self.tab_FirmwareBurn)
+        self.groupBox_2.setObjectName(u"groupBox_2")
+        sizePolicy6 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        sizePolicy6.setHorizontalStretch(0)
+        sizePolicy6.setVerticalStretch(200)
+        sizePolicy6.setHeightForWidth(self.groupBox_2.sizePolicy().hasHeightForWidth())
+        self.groupBox_2.setSizePolicy(sizePolicy6)
+        self.formLayout_3 = QFormLayout(self.groupBox_2)
+        self.formLayout_3.setObjectName(u"formLayout_3")
+        self.label_8 = QLabel(self.groupBox_2)
+        self.label_8.setObjectName(u"label_8")
+        self.label_8.setMinimumSize(QSize(0, 20))
+
+        self.formLayout_3.setWidget(0, QFormLayout.ItemRole.LabelRole, self.label_8)
+
+        self.label_9 = QLabel(self.groupBox_2)
+        self.label_9.setObjectName(u"label_9")
+        self.label_9.setMinimumSize(QSize(0, 20))
+
+        self.formLayout_3.setWidget(1, QFormLayout.ItemRole.LabelRole, self.label_9)
+
+        self.label_10 = QLabel(self.groupBox_2)
+        self.label_10.setObjectName(u"label_10")
+        self.label_10.setMinimumSize(QSize(0, 20))
+
+        self.formLayout_3.setWidget(2, QFormLayout.ItemRole.LabelRole, self.label_10)
+
+
+        self.verticalLayout_9.addWidget(self.groupBox_2)
+
+        self.verticalSpacer_4 = QSpacerItem(370, 126, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+
+        self.verticalLayout_9.addItem(self.verticalSpacer_4)
+
+        self.tabWidget_Main.addTab(self.tab_FirmwareBurn, "")
 
         self.verticalLayout_Main.addWidget(self.tabWidget_Main)
 
@@ -1973,7 +2074,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 1044, 33))
+        self.menubar.setGeometry(QRect(0, 0, 1117, 33))
         self.menu_File = QMenu(self.menubar)
         self.menu_File.setObjectName(u"menu_File")
         self.menu_Tools = QMenu(self.menubar)
@@ -1998,7 +2099,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.tabWidget_Main.setCurrentIndex(0)
+        self.tabWidget_Main.setCurrentIndex(8)
 
 
         QMetaObject.connectSlotsByName(MainWindow)
@@ -2272,6 +2373,18 @@ class Ui_MainWindow(object):
         self.lbl_Vision_Val.setText(QCoreApplication.translate("MainWindow", u"--", None))
         self.btn_CheckCompute.setText(QCoreApplication.translate("MainWindow", u"\u68c0\u67e5\u7b97\u529b\u73af\u5883", None))
         self.tabWidget_Main.setTabText(self.tabWidget_Main.indexOf(self.tab_Env), QCoreApplication.translate("MainWindow", u"\u7cfb\u7edf\u73af\u5883\u68c0\u67e5", None))
+        self.grp_FirmwareOTA.setTitle(QCoreApplication.translate("MainWindow", u"\u70e7\u5f55\u987a\u5e8f", None))
+        self.label_7.setText(QCoreApplication.translate("MainWindow", u"\u8bf7\u6309\u987a\u5e8f\u64cd\u4f5c\uff1a1) \u70b9\u51fb\u201c\u8fdb\u5165\u4e0a\u4f20\u6a21\u5f0f\u201d \u2192 2) \u9009\u62e9 HEX \u6587\u4ef6 \u2192 3) \u70b9\u51fb\u201c\u786e\u8ba4\u4e0a\u4f20\u201d\u3002", None))
+        self.btn_EnterUploadMode.setText(QCoreApplication.translate("MainWindow", u"\u8fdb\u5165\u4e0a\u4f20\u6a21\u5f0f", None))
+        self.lineEdit_HexFilePath.setPlaceholderText(QCoreApplication.translate("MainWindow", u"\u8bf7\u9009\u62e9\u8981\u4e0a\u4f20\u7684 .hex \u6587\u4ef6", None))
+        self.btn_SelectHexFile.setText(QCoreApplication.translate("MainWindow", u"\u9009\u62e9HEX\u6587\u4ef6", None))
+        self.btn_ConfirmUpload.setText(QCoreApplication.translate("MainWindow", u"\u786e\u8ba4\u4e0a\u4f20", None))
+        self.progressBar_FirmwareUpload.setFormat(QCoreApplication.translate("MainWindow", u"\u4e0a\u4f20\u8fdb\u5ea6\uff1a%p%", None))
+        self.groupBox_2.setTitle(QCoreApplication.translate("MainWindow", u"\u91cd\u8981\u63d0\u793a", None))
+        self.label_8.setText(QCoreApplication.translate("MainWindow", u"\u2022 \u4e0a\u4f20\u8fc7\u7a0b\u4e2d\u8bf7\u52ff\u65ad\u7535\u3001\u52ff\u62d4\u6389\u63a7\u5236\u5668\u6216\u4e32\u53e3\u8bbe\u5907\u3002", None))
+        self.label_9.setText(QCoreApplication.translate("MainWindow", u"\u2022 \u8bf7\u786e\u4fdd\u5df2\u9009\u62e9\u6b63\u786e\u7684 HEX \u6587\u4ef6\u4e0e\u76ee\u6807\u8bbe\u5907\uff0c\u4e0a\u4f20\u4e2d\u8bf7\u52ff\u5207\u6362\u7aef\u53e3\u3002", None))
+        self.label_10.setText(QCoreApplication.translate("MainWindow", u"\u2022 \u4e0a\u4f20\u5b8c\u6210\u524d\u4e0d\u8981\u5173\u95ed\u8f6f\u4ef6\uff1b\u82e5\u5931\u8d25\uff0c\u8bf7\u91cd\u65b0\u8fdb\u5165\u4e0a\u4f20\u6a21\u5f0f\u540e\u518d\u5c1d\u8bd5\u3002", None))
+        self.tabWidget_Main.setTabText(self.tabWidget_Main.indexOf(self.tab_FirmwareBurn), QCoreApplication.translate("MainWindow", u"\u70e7\u5f55\u7a0b\u5e8f", None))
         self.grp_Log.setTitle(QCoreApplication.translate("MainWindow", u"\u901a\u8baf\u65e5\u5fd7", None))
         self.txt_Log.setPlainText("")
         self.chk_AutoScroll.setText(QCoreApplication.translate("MainWindow", u"\u81ea\u52a8\u6eda\u52a8\u5230\u5e95\u90e8", None))

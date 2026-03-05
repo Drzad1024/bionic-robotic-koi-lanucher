@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1110</width>
-    <height>890</height>
+    <width>1117</width>
+    <height>940</height>
    </rect>
   </property>
   <property name="font">
@@ -706,7 +706,7 @@ QPushButton:pressed {
          </sizepolicy>
         </property>
         <property name="currentIndex">
-         <number>1</number>
+         <number>8</number>
         </property>
         <widget class="QWidget" name="tab_SimpleMotion">
          <attribute name="title">
@@ -3473,28 +3473,40 @@ QPushButton:pressed {
          <attribute name="title">
           <string>烧录程序</string>
          </attribute>
-         <layout class="QVBoxLayout" name="verticalLayout_FirmwareBurn">
-          <property name="spacing">
-           <number>10</number>
-          </property>
+         <layout class="QVBoxLayout" name="verticalLayout_9">
           <item>
-           <widget class="QGroupBox" name="grp_FirmwareFlow">
-            <property name="title">
-             <string>烧录流程</string>
+           <widget class="QGroupBox" name="grp_FirmwareOTA">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>20</verstretch>
+             </sizepolicy>
             </property>
-            <layout class="QVBoxLayout" name="verticalLayout_FirmwareFlow">
+            <property name="title">
+             <string>烧录顺序</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_8">
              <item>
-              <widget class="QLabel" name="lbl_FirmwareStepHint">
+              <widget class="QLabel" name="label_7">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>20</verstretch>
+                </sizepolicy>
+               </property>
                <property name="text">
                 <string>请按顺序操作：1) 点击“进入上传模式” → 2) 选择 HEX 文件 → 3) 点击“确认上传”。</string>
-               </property>
-               <property name="wordWrap">
-                <bool>true</bool>
                </property>
               </widget>
              </item>
              <item>
               <widget class="QPushButton" name="btn_EnterUploadMode">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
                <property name="minimumSize">
                 <size>
                  <width>0</width>
@@ -3507,13 +3519,13 @@ QPushButton:pressed {
               </widget>
              </item>
              <item>
-              <layout class="QHBoxLayout" name="horizontalLayout_HexFile">
+              <layout class="QHBoxLayout" name="horizontalLayout_7">
                <item>
                 <widget class="QLineEdit" name="lineEdit_HexFilePath">
                  <property name="minimumSize">
                   <size>
                    <width>0</width>
-                   <height>30</height>
+                   <height>32</height>
                   </size>
                  </property>
                  <property name="readOnly">
@@ -3522,14 +3534,17 @@ QPushButton:pressed {
                  <property name="placeholderText">
                   <string>请选择要上传的 .hex 文件</string>
                  </property>
+                 <property name="cursorMoveStyle">
+                  <enum>Qt::CursorMoveStyle::LogicalMoveStyle</enum>
+                 </property>
                 </widget>
                </item>
                <item>
                 <widget class="QPushButton" name="btn_SelectHexFile">
                  <property name="minimumSize">
                   <size>
-                   <width>120</width>
-                   <height>30</height>
+                   <width>0</width>
+                   <height>32</height>
                   </size>
                  </property>
                  <property name="text">
@@ -3554,6 +3569,12 @@ QPushButton:pressed {
              </item>
              <item>
               <widget class="QProgressBar" name="progressBar_FirmwareUpload">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>32</height>
+                </size>
+               </property>
                <property name="minimum">
                 <number>0</number>
                </property>
@@ -3572,43 +3593,71 @@ QPushButton:pressed {
            </widget>
           </item>
           <item>
-           <widget class="QGroupBox" name="grp_FirmwareSafety">
+           <widget class="QGroupBox" name="groupBox_2">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>200</verstretch>
+             </sizepolicy>
+            </property>
             <property name="title">
              <string>重要提示</string>
             </property>
-            <layout class="QVBoxLayout" name="verticalLayout_FirmwareSafety">
-             <item>
-              <widget class="QLabel" name="lbl_FirmwareWarn1">
+            <layout class="QFormLayout" name="formLayout_3">
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_8">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>20</height>
+                </size>
+               </property>
                <property name="text">
                 <string>• 上传过程中请勿断电、勿拔掉控制器或串口设备。</string>
                </property>
-               <property name="wordWrap">
-                <bool>true</bool>
-               </property>
               </widget>
              </item>
-             <item>
-              <widget class="QLabel" name="lbl_FirmwareWarn2">
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_9">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>20</height>
+                </size>
+               </property>
                <property name="text">
                 <string>• 请确保已选择正确的 HEX 文件与目标设备，上传中请勿切换端口。</string>
                </property>
-               <property name="wordWrap">
-                <bool>true</bool>
-               </property>
               </widget>
              </item>
-             <item>
-              <widget class="QLabel" name="lbl_FirmwareWarn3">
+             <item row="2" column="0">
+              <widget class="QLabel" name="label_10">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>20</height>
+                </size>
+               </property>
                <property name="text">
                 <string>• 上传完成前不要关闭软件；若失败，请重新进入上传模式后再尝试。</string>
-               </property>
-               <property name="wordWrap">
-                <bool>true</bool>
                </property>
               </widget>
              </item>
             </layout>
            </widget>
+          </item>
+          <item>
+           <spacer name="verticalSpacer_4">
+            <property name="orientation">
+             <enum>Qt::Orientation::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>370</width>
+              <height>126</height>
+             </size>
+            </property>
+           </spacer>
           </item>
          </layout>
         </widget>
@@ -3713,7 +3762,7 @@ QPushButton:pressed {
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1110</width>
+     <width>1117</width>
      <height>33</height>
     </rect>
    </property>
