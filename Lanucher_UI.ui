@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1044</width>
-    <height>882</height>
+    <width>1110</width>
+    <height>890</height>
    </rect>
   </property>
   <property name="font">
@@ -226,7 +226,7 @@
            </widget>
           </item>
           <item row="2" column="0">
-           <widget class="QPushButton" name="pushButton_5">
+           <widget class="QPushButton" name="btn_SetCtrlID">
             <property name="minimumSize">
              <size>
               <width>0</width>
@@ -706,7 +706,7 @@ QPushButton:pressed {
          </sizepolicy>
         </property>
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
         <widget class="QWidget" name="tab_SimpleMotion">
          <attribute name="title">
@@ -1066,7 +1066,7 @@ QPushButton:pressed {
                     <string>仅控 S1</string>
                    </property>
                    <property name="checked">
-                    <bool>true</bool>
+                    <bool>false</bool>
                    </property>
                   </widget>
                  </item>
@@ -1081,6 +1081,9 @@ QPushButton:pressed {
                   <widget class="QRadioButton" name="radio_Dual_Sync">
                    <property name="text">
                     <string>双机同步</string>
+                   </property>
+                   <property name="checked">
+                    <bool>true</bool>
                    </property>
                   </widget>
                  </item>
@@ -3466,6 +3469,149 @@ QPushButton:pressed {
           </item>
          </layout>
         </widget>
+        <widget class="QWidget" name="tab_FirmwareBurn">
+         <attribute name="title">
+          <string>烧录程序</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_FirmwareBurn">
+          <property name="spacing">
+           <number>10</number>
+          </property>
+          <item>
+           <widget class="QGroupBox" name="grp_FirmwareFlow">
+            <property name="title">
+             <string>烧录流程</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_FirmwareFlow">
+             <item>
+              <widget class="QLabel" name="lbl_FirmwareStepHint">
+               <property name="text">
+                <string>请按顺序操作：1) 点击“进入上传模式” → 2) 选择 HEX 文件 → 3) 点击“确认上传”。</string>
+               </property>
+               <property name="wordWrap">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btn_EnterUploadMode">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>32</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>进入上传模式</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_HexFile">
+               <item>
+                <widget class="QLineEdit" name="lineEdit_HexFilePath">
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>30</height>
+                  </size>
+                 </property>
+                 <property name="readOnly">
+                  <bool>true</bool>
+                 </property>
+                 <property name="placeholderText">
+                  <string>请选择要上传的 .hex 文件</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btn_SelectHexFile">
+                 <property name="minimumSize">
+                  <size>
+                   <width>120</width>
+                   <height>30</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>选择HEX文件</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btn_ConfirmUpload">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>32</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>确认上传</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QProgressBar" name="progressBar_FirmwareUpload">
+               <property name="minimum">
+                <number>0</number>
+               </property>
+               <property name="maximum">
+                <number>100</number>
+               </property>
+               <property name="value">
+                <number>0</number>
+               </property>
+               <property name="format">
+                <string>上传进度：%p%</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="grp_FirmwareSafety">
+            <property name="title">
+             <string>重要提示</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_FirmwareSafety">
+             <item>
+              <widget class="QLabel" name="lbl_FirmwareWarn1">
+               <property name="text">
+                <string>• 上传过程中请勿断电、勿拔掉控制器或串口设备。</string>
+               </property>
+               <property name="wordWrap">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="lbl_FirmwareWarn2">
+               <property name="text">
+                <string>• 请确保已选择正确的 HEX 文件与目标设备，上传中请勿切换端口。</string>
+               </property>
+               <property name="wordWrap">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="lbl_FirmwareWarn3">
+               <property name="text">
+                <string>• 上传完成前不要关闭软件；若失败，请重新进入上传模式后再尝试。</string>
+               </property>
+               <property name="wordWrap">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
        </widget>
       </item>
       <item>
@@ -3567,7 +3713,7 @@ QPushButton:pressed {
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1044</width>
+     <width>1110</width>
      <height>33</height>
     </rect>
    </property>
